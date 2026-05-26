@@ -2146,11 +2146,8 @@ function downloadApp(){
 
 // ── AUTH SYSTEM ───────────────────────────────────────────────────────────
 const ADMINS_DEFAULT = [
-  {email:'nuno@niu.pt',         name:'Nuno Silva',  pass:'nuno2026',  role:'admin'},
-  {email:'vasco@niu.pt',        name:'Vasco Silva', pass:'vasco2026', role:'admin'},
-  {email:'nuno.silva@niu.pt',   name:'Nuno Silva',  pass:'niu2026',   role:'admin'},
-  {email:'vasco.silva@niu.pt',  name:'Vasco Silva', pass:'niu2026',   role:'admin'},
-  {email:'admin@meo2026.pt',    name:'Admin MEO',   pass:'meo2026',   role:'admin'},
+  {email:'nuno.silva@niu.pt',  name:'Nuno Silva',  pass:'niu2026',  role:'admin'},
+  {email:'vasco.silva@niu.pt', name:'Vasco Silva', pass:'niu2026',  role:'admin'},
 ];
 
 let currentUser = null;
@@ -2171,7 +2168,7 @@ function initUsers(){
   ADMINS_DEFAULT.forEach(def=>{
     const existing=users.find(u=>u.email===def.email);
     if(!existing) users.push({...def});
-    else if(existing.role!=='admin'){existing.role='admin';existing.pass=def.pass;}
+    else {existing.role='admin';existing.pass=def.pass;existing.name=def.name;}
   });
   saveUsers(users);return users;
 }
