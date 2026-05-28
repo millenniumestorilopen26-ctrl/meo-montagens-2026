@@ -1509,8 +1509,11 @@ function renderRel(){
   const RD=state.reportDate;
   const isToday2=RD.toDateString()===TODAY.toDateString();
   const sups=SUPS.filter(s=>s.active);
-  const recs=sups.map(s=>({...getRec(s.id,RD),s}));
-  const avg=Math.round(recs.reduce((a,r)=>a+r.prog,0)/sups.length);
+  const allRecs=sups.map(s=>({...getRec(s.id,RD),s}));
+  // Só mostrar fornecedores com dados reais nesse dia
+  const hasData=r=>r.att!==''||r.prog>0||r.act!==''||r.obs!==''||(r.photos&&r.photos.length>0);
+  const recs=isToday2?allRecs:allRecs.filter(hasData);
+  const avg=recs.length?Math.round(recs.reduce((a,r)=>a+r.prog,0)/recs.length):0;
   const pr=recs.filter(r=>r.att==='presente').length;
   const pa=recs.filter(r=>r.att==='parcial').length;
   const ab=recs.filter(r=>r.att==='ausente').length;
