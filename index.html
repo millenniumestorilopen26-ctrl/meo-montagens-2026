@@ -2280,9 +2280,21 @@ function _renderUtilizadoresInner(){
       '</div>').join('')+
     '</div>';
 
-  document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',async()=>{
+    b.disabled=true;b.textContent='A aprovar...';
     const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
-    if(u){u.role='viewer';saveUsers(users);renderUtilizadores();showToast(u.name+' aprovado!');}
+    if(u){
+      u.role='viewer';
+      try{
+        await saveUsersToFirebase(users);
+        _origSaveUsers(users);
+        showToast('✅ '+u.name+' aprovado!');
+      }catch(e){
+        _origSaveUsers(users);
+        showToast('⚠️ Aprovado localmente. Guardar no Firebase falhou.');
+      }
+      renderUtilizadores();
+    }
   }));
   document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('Rejeitar acesso?'))return;
@@ -2483,11 +2495,10 @@ function showAuthMsg(id, msg, isErr){
   el.textContent=msg;el.className='auth-msg '+(isErr?'err':'ok');el.style.display='block';
 }
 
-document.getElementById('login-btn').addEventListener('click',async ()=>{
+document.getElementById('login-btn').addEventListener('click',()=>{
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   if(!email||!pass){showAuthMsg('login-msg','Preenche email e password.',true);return;}
-  await loadUsersFromFirebase();
   const result=authLogin(email,pass);
   if(result.pending){
     document.getElementById('auth-screen').style.display='none';
