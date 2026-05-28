@@ -1126,7 +1126,7 @@ function navigate(pg){
   document.getElementById('tb-title').textContent=PAGE_TITLES[pg]||pg;
   closeSb();
   if(pg==='dashboard') renderDash();
-  if(pg==='mapa')      renderGantt();
+  if(pg==='mapa')      {centerOnToday();renderGantt();}
   if(pg==='registo')   renderReg();
   if(pg==='cronos')    renderCronos();
   if(pg==='gestao')    renderGestao();
@@ -1207,7 +1207,6 @@ function centerOnToday(){
   state.ganttOffset = Math.max(0, todayIdx - Math.floor(count/2));
 }
 function renderGantt(skipCenter){
-  if(!skipCenter && state.ganttOffset===0) centerOnToday();
   const days=getViewDays();
   const areas=[...new Set(SUPS.map(s=>s.area))];
   const sel=document.getElementById('g-area');
