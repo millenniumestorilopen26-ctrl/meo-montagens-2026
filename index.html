@@ -150,7 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .gt th.today-th{background:var(--yellow);color:var(--dark);font-weight:900}
 .gt td{border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
 .g-sup-td{position:sticky;left:0;background:var(--white);z-index:2;padding:0 11px;min-width:155px;border-right:2px solid var(--dark)}
-.g-day-td{min-width:95px;height:30px;cursor:pointer;transition:background .1s}
+.g-day-td{min-width:clamp(70px,22vw,110px);height:30px;cursor:pointer;transition:background .1s}
 .g-day-td:hover{background:var(--yellow-l)}
 .g-day-td.wknd{background:#fafafa}
 .g-day-td.tday{background:var(--yellow-l);border-left:2px solid var(--yellow)}
@@ -1204,11 +1204,13 @@ function renderDash(){
 // ── GANTT ─────────────────────────────────────────────────────────────────
 function getViewDays(){
   const days=[];
-  const count=5; // 2 antes + hoje + 2 depois
+  const isMob=window.innerWidth<600;
+  const count=isMob?3:7;
+  const half=Math.floor(count/2);
   const todayMidnight=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
   for(let i=0;i<count;i++){
     const d=new Date(todayMidnight);
-    d.setDate(d.getDate()-2+i+state.ganttOffset);
+    d.setDate(d.getDate()-half+i+state.ganttOffset);
     days.push(d);
   }
   return days;
