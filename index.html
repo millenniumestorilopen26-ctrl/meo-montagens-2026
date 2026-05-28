@@ -2069,8 +2069,10 @@ function openPhotoModal(sid,dateStr){
             const now=new Date();
             photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
             setRec(sid,d,{photos:[...photos]});
-            showToast('📸 Foto adicionada!');
-            draw();
+            showToast('📸 Foto guardada!');
+            // Auto-save and return to map
+            getModalRoot().innerHTML='';
+            if(state.page==='mapa')renderGantt(true);
           };reader.readAsDataURL(file);
         });
       });
