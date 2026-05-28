@@ -461,6 +461,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 
 <div id="modal-root"></div>
 <script>
+// ── MODAL ROOT HELPER ──────────────────────────────────────────────────────
+function getModalRoot(){
+  let mr = getModalRoot();
+  if(!mr){
+    mr = document.createElement('div');
+    mr.id = 'modal-root';
+    document.body.appendChild(mr);
+  }
+  return mr;
+}
+
 // ── CLOUDINARY CONFIG ─────────────────────────────────────────────────────
 const CLOUDINARY_CLOUD = 'dbcuonkqy';
 const CLOUDINARY_PRESET = 'c089fc2a-82b7-4354-b8ea-8c793338d582';
@@ -1707,7 +1718,7 @@ function renderContactos(){
 
   function editContact(idx){
     const c=CONTACTS[idx];
-    const mr=document.getElementById('modal-root');if(!mr)return;mr.innerHTML=
+    const mr=getModalRoot();if(!mr)return;mr.innerHTML=
       '<div class="modal-bg mc" id="ct-bg"><div class="modal" style="max-width:430px">'+
       '<div class="mhdr"><h3><i class="ti ti-address-card" style="color:var(--yellow)"></i> Editar Contacto</h3><button class="mcls" id="ct-x">✕</button></div>'+
       '<div class="mbody">'+
@@ -1733,7 +1744,7 @@ function renderContactos(){
       '<div><label class="flbl">Notas</label><textarea class="fta" id="ct-notes" style="min-height:52px">'+(c.notes||'')+'</textarea></div>'+
       '</div><div class="mfoot"><button class="btn btn-out" id="ct-can">Cancelar</button><button class="btn btn-dark" id="ct-ok"><i class="ti ti-device-floppy"></i>Guardar</button></div>'+
       '</div></div>';
-    const close=()=>document.getElementById('modal-root').innerHTML='';
+    const close=()=>getModalRoot().innerHTML='';
     document.getElementById('ct-x').onclick=close;document.getElementById('ct-can').onclick=close;
     document.getElementById('ct-bg').addEventListener('click',e=>{if(e.target.id==='ct-bg')close();});
     const roleSel=document.getElementById('ct-role-sel');const roleInp=document.getElementById('ct-role');
@@ -1997,7 +2008,7 @@ function openDayModal(sid,d){
   const r=getRec(sid,d);const photos=[...(r.photos||[])];
   const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()]+' '+d.getFullYear();
   function draw(){
-    (document.getElementById('modal-root')||document.body).innerHTML=
+    (getModalRoot()||document.body).innerHTML=
       '<div class="modal-bg" id="mbg"><div class="modal">'+
       '<div class="mhdr"><h3><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+sup.color+';margin-right:7px"></span>'+sup.name+' — '+dayLabel+'</h3><button class="mcls" id="m-close">✕</button></div>'+
       '<div class="mbody">'+
@@ -2020,7 +2031,7 @@ function openDayModal(sid,d){
       '</div><div class="mfoot"><button class="btn btn-out" id="m-cancel">Cancelar</button><button class="btn btn-dark" id="m-save"><i class="ti ti-device-floppy"></i>Guardar</button></div>'+
       '</div></div>';
 
-    const close=()=>(document.getElementById('modal-root')||document.body).innerHTML='';
+    const close=()=>(getModalRoot()||document.body).innerHTML='';
     document.getElementById('m-close').onclick=close;document.getElementById('m-cancel').onclick=close;
     document.getElementById('mbg').addEventListener('click',e=>{if(e.target.id==='mbg')close();});
     document.querySelectorAll('.pill[data-v]').forEach(p=>p.addEventListener('click',()=>{
@@ -2073,7 +2084,7 @@ function openLightbox(photos,startIdx){
   let cur=Math.min(startIdx||0,imgs.length-1);
   function draw(){
     const p=imgs[cur];
-    document.getElementById('modal-root').innerHTML=
+    getModalRoot().innerHTML=
       '<div id="lbg" style="position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px">'+
       '<div style="position:absolute;top:14px;right:14px;display:flex;gap:8px">'+
       '<a href="'+p.dataUrl+'" download="'+(p.desc||'foto')+'" style="background:var(--yellow);color:var(--dark);border-radius:3px;padding:8px 14px;font-size:12px;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-weight:800;text-transform:uppercase"><i class="ti ti-download"></i>Guardar</a>'+
@@ -2090,8 +2101,8 @@ function openLightbox(photos,startIdx){
       imgs.map((ip,ii)=>'<div data-li="'+ii+'" style="width:52px;height:52px;border-radius:3px;overflow:hidden;cursor:pointer;border:2px solid '+(ii===cur?'var(--yellow)':'transparent')+';flex-shrink:0"><img src="'+ip.dataUrl+'" style="width:100%;height:100%;object-fit:cover"></div>').join('')+
       '</div>':'')+
       '</div>';
-    document.getElementById('lb-close').onclick=()=>document.getElementById('modal-root').innerHTML='';
-    document.getElementById('lbg').addEventListener('click',e=>{if(e.target.id==='lbg')document.getElementById('modal-root').innerHTML='';});
+    document.getElementById('lb-close').onclick=()=>getModalRoot().innerHTML='';
+    document.getElementById('lbg').addEventListener('click',e=>{if(e.target.id==='lbg')getModalRoot().innerHTML='';});
     const prev=document.getElementById('lb-prev');if(prev)prev.onclick=()=>{cur--;draw();};
     const next=document.getElementById('lb-next');if(next)next.onclick=()=>{cur++;draw();};
     document.querySelectorAll('[data-li]').forEach(t=>t.addEventListener('click',()=>{cur=parseInt(t.dataset.li);draw();}));
@@ -2111,7 +2122,7 @@ function openAddSup(){
     zoneOpts+='<option value="Recinto">Recinto geral</option>';
     var areaOpts='<option value="">Seleccionar categoria...</option>';
     AREAS_LIST.forEach(function(a){areaOpts+='<option value="'+a+'">'+a+'</option>';});
-    document.getElementById('modal-root').innerHTML=
+    getModalRoot().innerHTML=
       '<div class="modal-bg mc" id="as-bg"><div class="modal" style="max-width:500px">'+
       '<div class="mhdr"><h3><i class="ti ti-truck-delivery" style="color:var(--yellow)"></i> Adicionar Fornecedor</h3><button class="mcls" id="as-close">✕</button></div>'+
       '<div class="mbody">'+
@@ -2151,7 +2162,7 @@ function openAddSup(){
       '</div><div class="mfoot"><button class="btn btn-out" id="as-cancel">Cancelar</button><button class="btn btn-dark" id="as-save"><i class="ti ti-check"></i>Criar Fornecedor</button></div>'+
       '</div></div>';
 
-    const close=()=>document.getElementById('modal-root').innerHTML='';
+    const close=()=>getModalRoot().innerHTML='';
     document.getElementById('as-close').onclick=close;document.getElementById('as-cancel').onclick=close;
     document.getElementById('as-bg').addEventListener('click',e=>{if(e.target.id==='as-bg')close();});
     document.querySelectorAll('[data-c]').forEach(el=>el.addEventListener('click',()=>{
@@ -2525,7 +2536,7 @@ function _renderUtilizadoresInner(){
 }
 
 function openAddUserModal(){
-  document.getElementById('modal-root').innerHTML=
+  getModalRoot().innerHTML=
     '<div class="modal-bg mc" id="au-bg"><div class="modal" style="max-width:380px">'+
     '<div class="mhdr"><h3><i class="ti ti-user-plus" style="color:var(--yellow)"></i> Adicionar Utilizador</h3><button class="mcls" id="au-x">✕</button></div>'+
     '<div class="mbody">'+
@@ -2536,7 +2547,7 @@ function openAddUserModal(){
     '</div>'+
     '<div class="mfoot"><button class="btn btn-out" id="au-can">Cancelar</button><button class="btn btn-dark" id="au-ok"><i class="ti ti-check"></i>Adicionar</button></div>'+
     '</div></div>';
-  const close=()=>document.getElementById('modal-root').innerHTML='';
+  const close=()=>getModalRoot().innerHTML='';
   document.getElementById('au-x').onclick=close;document.getElementById('au-can').onclick=close;
   document.getElementById('au-bg').addEventListener('click',e=>{if(e.target.id==='au-bg')close();});
   document.getElementById('au-ok').onclick=()=>{
