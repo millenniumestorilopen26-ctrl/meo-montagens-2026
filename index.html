@@ -2483,10 +2483,11 @@ function showAuthMsg(id, msg, isErr){
   el.textContent=msg;el.className='auth-msg '+(isErr?'err':'ok');el.style.display='block';
 }
 
-document.getElementById('login-btn').addEventListener('click',()=>{
+document.getElementById('login-btn').addEventListener('click',async ()=>{
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   if(!email||!pass){showAuthMsg('login-msg','Preenche email e password.',true);return;}
+  await loadUsersFromFirebase();
   const result=authLogin(email,pass);
   if(result.pending){
     document.getElementById('auth-screen').style.display='none';
