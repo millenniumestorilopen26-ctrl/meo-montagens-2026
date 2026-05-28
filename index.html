@@ -2287,36 +2287,31 @@ function _renderUtilizadoresInner(){
       u.role='viewer';
       _origSaveUsers(users);
       try{await saveUsersToFirebase(users);showToast('✅ '+u.name+' aprovado!');}
-      catch(e){showToast('⚠️ Guardado localmente. Firebase falhou: '+e.message);}
+      catch(e){showToast('⚠️ Guardado localmente. Firebase: '+e.message);}
       _renderUtilizadoresInner();
     }
   }));
   document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Rejeitar pedido?'))return;
+    b.disabled=true;
+    const users=getUsers();const filtered=users.filter(u=>u.email!==b.dataset.email);
+    _origSaveUsers(filtered);
+    try{await saveUsersToFirebase(filtered);showToast('❌ Pedido rejeitado');}
+    catch(e){showToast('⚠️ Removido localmente. Firebase: '+e.message);}
+    _renderUtilizadoresInner();
+  }));
+  document.querySelectorAll('.usr-role').forEach(sel=>sel.addEventListener('change',()=>{
+    const users=getUsers();const u=users.find(x=>x.email===sel.dataset.email);
+    if(u){u.role=sel.value;saveUsers(users);showToast('Função actualizada!');renderUtilizadores();}
+  }));
+  document.querySelectorAll('.usr-del').forEach(b=>b.addEventListener('click',async()=>{
     if(!confirm('Remover utilizador?'))return;
     b.disabled=true;
-    const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
-    if(u){
-      const filtered=users.filter(x=>x.email!==b.dataset.email);
-      _origSaveUsers(filtered);
-      try{await saveUsersToFirebase(filtered);showToast('🗑️ Utilizador removido!');}
-      catch(e){showToast('⚠️ Removido localmente. Firebase falhou: '+e.message);}
-      _renderUtilizadoresInner();
-    }
-  }));
-  document.querySelectorAll('.usr-role').forEach(sel=>sel.addEventListener('change',async()=>{
-    const users=getUsers();const u=users.find(x=>x.email===sel.dataset.email);
-    if(u){
-      u.role=sel.value;
-      _origSaveUsers(users);
-      try{await saveUsersToFirebase(users);showToast('✅ Função actualizada!');}
-      catch(e){showToast('⚠️ Guardado localmente. Firebase falhou.');}
-      _renderUtilizadoresInner();
-    }
-  }));
-  document.querySelectorAll('.usr-del').forEach(b=>b.addEventListener('click',()=>{
-    if(!confirm('Remover utilizador?'))return;
-    let users=getUsers();users=users.filter(u=>u.email!==b.dataset.email);
-    saveUsers(users);renderUtilizadores();
+    let users=getUsers();const filtered=users.filter(u=>u.email!==b.dataset.email);
+    _origSaveUsers(filtered);
+    try{await saveUsersToFirebase(filtered);showToast('🗑️ Utilizador removido!');}
+    catch(e){showToast('⚠️ Removido localmente. Firebase: '+e.message);}
+    _renderUtilizadoresInner();
   }));
   const addBtn=document.getElementById('add-user-btn');
   if(addBtn)addBtn.addEventListener('click',()=>openAddUserModal());
