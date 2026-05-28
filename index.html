@@ -2306,6 +2306,49 @@ function _renderUtilizadoresInner(){
       '</div>').join('')+
     '</div>';
 
+  // Add danger zone
+  const pgEl = document.getElementById('pg-utilizadores');
+  const toolsDiv = document.createElement('div');
+  toolsDiv.style.cssText='margin-top:16px';
+  toolsDiv.innerHTML='<div class="card" style="border-left:4px solid #ef4444;margin-top:8px">'+
+    '<div class="ch"><div class="ct" style="color:#ef4444"><i class="ti ti-alert-triangle"></i>Ferramentas Admin</div></div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0">'+
+    '<button id="clear-records-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar TODOS os registos</button>'+
+    '<button id="clear-sups-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar fornecedores Firebase</button>'+
+    '</div></div>';
+  pgEl.appendChild(toolsDiv);
+
+  const crBtn = document.getElementById('clear-records-btn');
+  if(crBtn) crBtn.addEventListener('click', async()=>{
+    if(!confirm('⚠️ Tens a certeza? Apaga TODOS os registos diários (assiduidade, progresso, observações, fotos). Esta acção é irreversível!'))return;
+    if(!confirm('Confirmas que queres apagar TUDO?'))return;
+    crBtn.disabled=true; crBtn.textContent='A limpar...';
+    try{
+      await fbSet('records', null);
+      // Clear local cache
+      Object.keys(_recCache).forEach(k=>delete _recCache[k]);
+      showToast('✅ Todos os registos eliminados!');
+      crBtn.textContent='✅ Feito!';
+    }catch(e){
+      showToast('❌ Erro: '+e.message);
+      crBtn.disabled=false; crBtn.textContent='Limpar TODOS os registos';
+    }
+  });
+
+  const csBtn = document.getElementById('clear-sups-btn');
+  if(csBtn) csBtn.addEventListener('click', async()=>{
+    if(!confirm('Apagar fornecedores guardados no Firebase? (Os fornecedores padrão mantêm-se)'))return;
+    csBtn.disabled=true; csBtn.textContent='A limpar...';
+    try{
+      await fbSet('sups', null);
+      showToast('✅ Fornecedores Firebase limpos!');
+      csBtn.textContent='✅ Feito!';
+    }catch(e){
+      showToast('❌ Erro: '+e.message);
+      csBtn.disabled=false;
+    }
+  });
+
   document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',()=>{
     const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
     if(u){u.role='viewer';saveUsers(users);renderUtilizadores();showToast(u.name+' aprovado!');}
