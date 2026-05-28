@@ -1231,7 +1231,12 @@ function renderGantt(skipCenter){
   const sups=SUPS.filter(s=>!state.ganttArea||s.area===state.ganttArea);
   let html='<table class="gt"><thead><tr><th class="sup-th">Fornecedor</th>'+days.map(d=>'<th class="'+(isToday(d)?'today-th':isWknd(d)?'wknd-th':'')+'"><div style="font-size:9px">'+DPT[d.getDay()]+'</div><div>'+String(d.getDate()).padStart(2,'0')+'</div></th>').join('')+'</tr></thead><tbody>';
   sups.forEach(sup=>{
-    html+='<tr class="g-sup-hdr"><td class="g-sup-td"><div style="display:flex;align-items:center;gap:7px"><div class="sdot" style="background:'+sup.color+'"></div><div style="flex:1"><div style="font-size:12px;font-weight:700">'+sup.name+'</div><div style="font-size:10px;color:var(--text3)">'+sup.area+'</div></div><button onclick="openEditSup(\''+sup.id+'\')" style="background:rgba(255,236,26,.15);border:none;cursor:pointer;color:var(--yellow);padding:3px 7px;border-radius:4px;font-size:12px"><i class="ti ti-pencil"></i></button></div></td>'+days.map(d=>'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" data-open="'+sup.id+'||'+d.toISOString()+'" style="cursor:pointer"></td>').join('')+'</tr>';
+    html+='<tr class="g-sup-hdr"><td class="g-sup-td"><div style="display:flex;align-items:center;gap:7px"><div class="sdot" style="background:'+sup.color+'"></div><div style="flex:1"><div style="font-size:12px;font-weight:700">'+sup.name+'</div><div style="font-size:10px;color:var(--text3)">'+sup.area+'</div></div><button onclick="openEditSup(\''+sup.id+'\')" style="background:rgba(255,236,26,.15);border:none;cursor:pointer;color:var(--yellow);padding:3px 7px;border-radius:4px;font-size:12px"><i class="ti ti-pencil"></i></button></div></td>'+days.map(d=>{
+      const ph=(getRec(sup.id,d).photos||[]).filter(p=>p.dataUrl).length;
+      return '<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" data-open="'+sup.id+'||'+d.toISOString()+'" style="cursor:pointer;text-align:center;padding:4px 2px">'+
+        '<button class="g-ph-btn" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" style="font-size:11px;font-weight:700;background:'+(ph?'var(--blue)':'transparent')+';color:'+(ph?'#fff':'rgba(255,255,255,.3)')+';border:1px solid '+(ph?'var(--blue)':'rgba(255,255,255,.15)')+';border-radius:4px;padding:3px 8px;cursor:pointer;font-family:inherit">'+
+        (ph?'📎 '+ph+' foto'+(ph!==1?'s':''):'📎')+'</button></td>';
+    }).join('')+'</tr>';
     // Activity row - inline editable for admins
     html+='<tr class="g-data"><td class="g-sup-td" style="font-size:10px;color:var(--text3);padding:2px 11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px">Operação</td>'+days.map(d=>{
       const r=getRec(sup.id,d);const act=r.act||'';
