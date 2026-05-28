@@ -1370,10 +1370,11 @@ function renderReg(){
         '<img src="'+p.dataUrl+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
         '<button class="ph-del" data-sid="'+sup.id+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button></div>'
       ).join('')+
+      '</div>'+
+      '<div style="border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:8px;text-align:right">'+
+      '<button class="rc-clear-btn" data-sid="'+sup.id+'" style="background:none;border:1px solid rgba(255,80,80,.3);color:rgba(255,80,80,.6);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit">🗑 Limpar registo</button>'+
       '</div></div></div>';
-  }).join('');
-
-  document.querySelectorAll('.pill[data-att]').forEach(p=>p.addEventListener('click',()=>{
+  }).join('');  document.querySelectorAll('.pill[data-att]').forEach(p=>p.addEventListener('click',()=>{
     const sid=p.dataset.sid,att=p.dataset.att;setRec(sid,TODAY,{att});
     document.querySelectorAll('.pill[data-sid="'+sid+'"]').forEach(x=>{x.className='pill'+(x.dataset.att===att?' p-'+att.slice(0,3):'');});
   }));
@@ -1411,6 +1412,15 @@ document.getElementById('save-all-btn').addEventListener('click',e=>{
   e.target.innerHTML='<i class="ti ti-check"></i> GUARDADO!';e.target.style.background='#1a9e4a';
   setTimeout(()=>{e.target.innerHTML='<i class="ti ti-device-floppy"></i> GUARDAR TODOS';e.target.style.background='';},2000);
 });
+
+// Clear individual record button
+document.querySelectorAll('.rc-clear-btn').forEach(btn=>btn.addEventListener('click',()=>{
+  const sid=btn.dataset.sid;
+  if(!confirm('Limpar o registo de '+sid+' de hoje?'))return;
+  setRec(sid,TODAY,{att:'',prog:0,act:'',obs:'',photos:[]});
+  renderReg();
+  showToast('Registo limpo!');
+}));
 
 // ── CRONOS ────────────────────────────────────────────────────────────────
 function renderCronos(){
