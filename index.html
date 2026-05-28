@@ -144,6 +144,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .gsel{padding:7px 10px;border:2px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text);background:var(--white);font-family:inherit;font-weight:700}
 .gwrap{overflow-x:auto;border-radius:var(--r);border:2px solid var(--dark);box-shadow:var(--sh)}
 .gt{border-collapse:collapse;width:max-content}
+@media(max-width:899px){
+  .gwrap{overflow-x:hidden}
+  .gt{table-layout:fixed;width:100%}
+  .sup-th,.g-sup-td{width:30%!important;min-width:0!important;max-width:none!important}
+  .gt th:not(.sup-th),.g-day-td{width:23.3%!important;min-width:0!important}
+  .g-day-td{font-size:9px}
+  .g-ph-btn{font-size:10px!important;padding:2px 3px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+}
 .gt th{background:var(--dark);color:rgba(255,255,255,.78);font-size:10px;font-weight:800;padding:9px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;min-width:95px;position:sticky;top:0;z-index:3;text-transform:uppercase;letter-spacing:.3px}
 .gt th.sup-th{min-width:100px;max-width:120px;text-align:left;padding-left:13px;position:sticky;left:0;z-index:4;background:var(--dark)}
 .gt th.wknd-th{background:var(--dark3);color:rgba(255,255,255,.3)}
