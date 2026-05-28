@@ -463,7 +463,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 <script>
 // ── MODAL ROOT HELPER ──────────────────────────────────────────────────────
 function getModalRoot(){
-  let mr = getModalRoot();
+  let mr = document.getElementById('modal-root');
   if(!mr){
     mr = document.createElement('div');
     mr.id = 'modal-root';
