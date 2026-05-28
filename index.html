@@ -2285,25 +2285,33 @@ function _renderUtilizadoresInner(){
     const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
     if(u){
       u.role='viewer';
-      try{
-        await saveUsersToFirebase(users);
-        _origSaveUsers(users);
-        showToast('✅ '+u.name+' aprovado!');
-      }catch(e){
-        _origSaveUsers(users);
-        showToast('⚠️ Aprovado localmente. Guardar no Firebase falhou.');
-      }
-      renderUtilizadores();
+      _origSaveUsers(users);
+      try{await saveUsersToFirebase(users);showToast('✅ '+u.name+' aprovado!');}
+      catch(e){showToast('⚠️ Guardado localmente. Firebase falhou: '+e.message);}
+      _renderUtilizadoresInner();
     }
   }));
-  document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',()=>{
-    if(!confirm('Rejeitar acesso?'))return;
+  document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Remover utilizador?'))return;
+    b.disabled=true;
     const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
-    if(u){u.role='rejected';saveUsers(users);renderUtilizadores();}
+    if(u){
+      const filtered=users.filter(x=>x.email!==b.dataset.email);
+      _origSaveUsers(filtered);
+      try{await saveUsersToFirebase(filtered);showToast('🗑️ Utilizador removido!');}
+      catch(e){showToast('⚠️ Removido localmente. Firebase falhou: '+e.message);}
+      _renderUtilizadoresInner();
+    }
   }));
-  document.querySelectorAll('.usr-role').forEach(sel=>sel.addEventListener('change',()=>{
+  document.querySelectorAll('.usr-role').forEach(sel=>sel.addEventListener('change',async()=>{
     const users=getUsers();const u=users.find(x=>x.email===sel.dataset.email);
-    if(u){u.role=sel.value;saveUsers(users);showToast('Função actualizada!');renderUtilizadores();}
+    if(u){
+      u.role=sel.value;
+      _origSaveUsers(users);
+      try{await saveUsersToFirebase(users);showToast('✅ Função actualizada!');}
+      catch(e){showToast('⚠️ Guardado localmente. Firebase falhou.');}
+      _renderUtilizadoresInner();
+    }
   }));
   document.querySelectorAll('.usr-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('Remover utilizador?'))return;
@@ -2495,10 +2503,11 @@ function showAuthMsg(id, msg, isErr){
   el.textContent=msg;el.className='auth-msg '+(isErr?'err':'ok');el.style.display='block';
 }
 
-document.getElementById('login-btn').addEventListener('click',()=>{
+document.getElementById('login-btn').addEventListener('click',async ()=>{
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   if(!email||!pass){showAuthMsg('login-msg','Preenche email e password.',true);return;}
+  await loadUsersFromFirebase();
   const result=authLogin(email,pass);
   if(result.pending){
     document.getElementById('auth-screen').style.display='none';
