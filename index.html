@@ -2010,7 +2010,7 @@ function openPhotoModal(sid,dateStr){
   const sup=SUPS.find(s=>s.id===sid);if(!sup)return;
   const r=getRec(sid,d);
   const photos=[...(r.photos||[])];
-  const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()];
+  const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()]+' '+d.getFullYear();
   function draw(){
     getModalRoot().innerHTML=
       '<div class="modal-bg" id="ph-bg"><div class="modal" style="max-width:420px">'+
