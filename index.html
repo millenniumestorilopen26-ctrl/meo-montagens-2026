@@ -2024,32 +2024,41 @@ function openPhotoModal(sid,dateStr){
   const photos=[...(r.photos||[])];
   const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()]+' '+d.getFullYear();
   function draw(){
-    getModalRoot().innerHTML=
-      '<div class="modal-bg mc" id="ph-bg" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999"><div class="modal" style="max-width:min(420px,96vw)">'+
-      '<div class="mhdr"><h3><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+sup.color+';margin-right:6px"></span>'+
-      sup.name+' — '+dayLabel+'</h3><button id="ph-close" class="mcls">✕</button></div>'+
-      '<div class="mbdy">'+
-      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;color:var(--text2)">Evidências ('+photos.filter(p=>p.dataUrl).length+')</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
-      '<label style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;background:var(--bg);border:2px dashed var(--border);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase">'+
-      '<i class="ti ti-camera" style="font-size:20px;color:var(--terra)"></i>Câmara'+
+    const mr=getModalRoot();
+    mr.innerHTML=
+      '<div id="ph-overlay" style="position:fixed;inset:0;z-index:9999;background:var(--dark);display:flex;flex-direction:column;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;padding:14px 16px;border-bottom:2px solid var(--yellow);background:var(--dark);flex-shrink:0">'+
+      '<div style="display:flex;align-items:center;gap:8px;flex:1">'+
+      '<div style="width:12px;height:12px;border-radius:50%;background:'+sup.color+'"></div>'+
+      '<div><div style="font-size:14px;font-weight:800;color:var(--yellow)">'+sup.name+'</div>'+
+      '<div style="font-size:11px;color:var(--text2)">'+dayLabel+'</div></div></div>'+
+      '<button id="ph-close" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px">✕</button></div>'+
+      '<div style="flex:1;overflow-y:auto;padding:16px">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'+
+      '<label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px 12px;background:var(--bg);border:2px solid var(--yellow);border-radius:12px;cursor:pointer;color:var(--yellow);font-size:13px;font-weight:800;text-transform:uppercase">'+
+      '<i class="ti ti-camera" style="font-size:32px"></i>Câmara'+
       '<input type="file" accept="image/*" capture="environment" id="ph-cam" style="display:none"></label>'+
-      '<label style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;background:var(--bg);border:2px dashed var(--border);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase">'+
-      '<i class="ti ti-photo" style="font-size:20px;color:var(--terra)"></i>Galeria'+
+      '<label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px 12px;background:var(--bg);border:2px dashed var(--border);border-radius:12px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:800;text-transform:uppercase">'+
+      '<i class="ti ti-photo" style="font-size:32px"></i>Galeria'+
       '<input type="file" accept="image/*" multiple id="ph-gal" style="display:none"></label></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px">'+
-      photos.filter(p=>p.dataUrl).map((p,i)=>
-        '<div style="position:relative;border-radius:6px;overflow:hidden;cursor:pointer" onclick="openLightbox('+i+','+JSON.stringify(photos.filter(q=>q.dataUrl)).replace(/"/g,'&quot;')+')">'+
-        '<img src="'+p.dataUrl+'" style="width:100%;height:72px;object-fit:cover;display:block">'+
-        '<button class="ph-del-btn" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button></div>'
-      ).join('')+
-      '</div></div>'+
-      '<div class="mfoot"><button class="btn btn-out" id="ph-cancel">Fechar</button><button class="btn btn-dark" id="ph-save"><i class="ti ti-device-floppy"></i>Guardar</button></div>'+
-      '</div></div>';
-    const close=()=>getModalRoot().innerHTML='';
+      (photos.filter(p=>p.dataUrl).length?
+        '<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text2);margin-bottom:10px;letter-spacing:.5px">Fotos guardadas ('+photos.filter(p=>p.dataUrl).length+')</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">'+
+        photos.filter(p=>p.dataUrl).map((p,i)=>
+          '<div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1">'+
+          '<img src="'+p.dataUrl+'" style="width:100%;height:100%;object-fit:cover;display:block">'+
+          '<button class="ph-del-btn" data-pi="'+i+'" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border:none;background:rgba(0,0,0,.8);border-radius:50%;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button></div>'
+        ).join('')+'</div>'
+      :'')+
+      '</div>'+
+      '<div style="padding:12px 16px;border-top:1px solid var(--border);background:var(--dark);flex-shrink:0">'+
+      '<button id="ph-save" style="width:100%;padding:14px;background:var(--yellow);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">'+
+      '<i class="ti ti-device-floppy"></i> GUARDAR E FECHAR</button></div>'+
+      '</div>';
+    const close=()=>{mr.innerHTML='';if(state.page==='mapa')renderGantt(true);};
     document.getElementById('ph-close').onclick=close;
-    document.getElementById('ph-cancel').onclick=close;
-    document.getElementById('ph-bg').addEventListener('click',e=>{if(e.target.id==='ph-bg')close();});
+    document.getElementById('ph-save').onclick=()=>{showToast('✅ Fotos guardadas!');close();};
+    document.getElementById('ph-overlay').addEventListener('click',e=>{if(e.target.id==='ph-overlay')close();});
     ['ph-cam','ph-gal'].forEach(id=>{
       const el=document.getElementById(id);if(!el)return;
       el.addEventListener('change',e=>{
@@ -2071,7 +2080,10 @@ function openPhotoModal(sid,dateStr){
       photos.splice(parseInt(btn.dataset.pi),1);
       setRec(sid,d,{photos:[...photos]});draw();
     }));
-    document.getElementById('ph-save').onclick=()=>{showToast('✅ Fotos guardadas!');close();if(state.page==='mapa')renderGantt();};
+    // Auto-open camera on first open if no photos yet
+    if(photos.filter(p=>p.dataUrl).length===0){
+      setTimeout(()=>{const cam=document.getElementById('ph-cam');if(cam)cam.click();},300);
+    }
   }
   draw();
 }
