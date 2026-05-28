@@ -2342,7 +2342,7 @@ function _renderUtilizadoresInner(){
         const parts = k.split('_');
         // Date is the last part (YYYY-MM-DD)
         const datePart = parts[parts.length-1];
-        if(datePart && datePart.match(/^\d{4}-\d{2}-\d{2}$/)){
+        if(datePart && datePart.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
           if(!dateMap[datePart])dateMap[datePart]=[];
           dateMap[datePart].push(k);
         }
@@ -2367,7 +2367,7 @@ function _renderUtilizadoresInner(){
         const dParts = d.split('-');
         const dt = new Date(parseInt(dParts[0]), parseInt(dParts[1])-1, parseInt(dParts[2]));
         const nRecs = (dateMap[d]||[]).length;
-        const label = dParts[2]+'/'+dParts[1]+'/'+dParts[0]; // DD/MM/YYYY
+        const label = dParts[2].padStart(2,'0')+'/'+dParts[1].padStart(2,'0')+'/'+dParts[0]; // DD/MM/YYYY
         return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" >'+
           '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
           '<span style="flex:1;font-size:13px;font-weight:700;color:#fff">'+label+'</span>'+
