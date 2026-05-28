@@ -2039,8 +2039,12 @@ function openDayModal(sid,d){
           reader.onload=ev=>{
             const now=new Date();
             photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
-            setRec(sid,d,{photos:[...photos]});draw();
-          };reader.readAsDataURL(file);
+            setRec(sid,d,{photos:[...photos]});
+            showToast('📸 Foto adicionada! A guardar...');
+            draw();
+          };
+          reader.onerror=()=>showToast('❌ Erro ao ler ficheiro');
+          reader.readAsDataURL(file);
         });
       });
     });
