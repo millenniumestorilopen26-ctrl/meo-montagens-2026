@@ -1021,7 +1021,7 @@ const SCHED_ENTRIES = [
 
 // ── STATE ─────────────────────────────────────────────────────────────────
 let state = {
-  page:'dashboard', records:{}, ganttOffset:(function(){const ms=TODAY-START;const todayIdx=Math.round(ms/86400000);return Math.max(0,todayIdx-2);})(), ganttArea:'',
+  page:'dashboard', records:{}, ganttOffset:0, ganttArea:'',
   schedTab:'oneway', evidence:{}, reportDate: new Date(),
   schedTasks: Object.fromEntries(Object.entries(SCHED_DATA).map(([k,v])=>[k,v.tasks.map(t=>({...t}))])),
 };
@@ -1193,16 +1193,21 @@ function getViewDays(){
   const days=[];
   const isMob = window.innerWidth < 768;
   const count = isMob ? 6 : 14;
-  // Ensure today is always centered when offset matches today
-  const todayIdx = Math.round((TODAY-START)/86400000);
-  const centerOffset = Math.max(0, todayIdx - Math.floor(count/2));
-  if(state.ganttOffset === Math.max(0, Math.round((TODAY-START)/86400000)-2)){
-    state.ganttOffset = centerOffset;
-  }
   for(let i=0;i<count;i++)days.push(addDays(START,state.ganttOffset+i));
   return days;
 }
-function renderGantt(){
+
+function centerOnToday(){
+  // Reliable day diff: compare midnight dates
+  const t = new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
+  const s = new Date(START.getFullYear(),START.getMonth(),START.getDate());
+  const todayIdx = Math.round((t-s)/86400000);
+  const isMob = window.innerWidth < 768;
+  const count = isMob ? 6 : 14;
+  state.ganttOffset = Math.max(0, todayIdx - Math.floor(count/2));
+}
+function renderGantt(skipCenter){
+  if(!skipCenter && state.ganttOffset===0) centerOnToday();
   const days=getViewDays();
   const areas=[...new Set(SUPS.map(s=>s.area))];
   const sel=document.getElementById('g-area');
@@ -1347,8 +1352,8 @@ function renderGantt(){
     });
   });
 }
-document.getElementById('g-prev').addEventListener('click',()=>{state.ganttOffset=Math.max(0,state.ganttOffset-1);renderGantt();});
-document.getElementById('g-next').addEventListener('click',()=>{state.ganttOffset++;renderGantt();});
+document.getElementById('g-prev').addEventListener('click',()=>{state.ganttOffset=Math.max(0,state.ganttOffset-1);renderGantt(true);});
+document.getElementById('g-next').addEventListener('click',()=>{state.ganttOffset++;renderGantt(true);});
 document.getElementById('g-area').addEventListener('change',e=>{state.ganttArea=e.target.value;renderGantt();});
 document.getElementById('add-sup-btn').addEventListener('click',openAddSup);
 
