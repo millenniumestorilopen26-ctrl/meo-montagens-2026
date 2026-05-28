@@ -1706,7 +1706,7 @@ function renderContactos(){
 
   function editContact(idx){
     const c=CONTACTS[idx];
-    document.getElementById('modal-root').innerHTML=
+    const mr=document.getElementById('modal-root');if(!mr)return;mr.innerHTML=
       '<div class="modal-bg mc" id="ct-bg"><div class="modal" style="max-width:430px">'+
       '<div class="mhdr"><h3><i class="ti ti-address-card" style="color:var(--yellow)"></i> Editar Contacto</h3><button class="mcls" id="ct-x">✕</button></div>'+
       '<div class="mbody">'+
@@ -2874,5 +2874,6 @@ if(authCheckSession()){
 
 
 </script>
+<div id="modal-root"></div>
 </body>
 </html>
