@@ -379,6 +379,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
     <div class="pg" id="pg-mapa">
       <div class="gc">
         <button class="gbtn" id="g-prev"><i class="ti ti-chevron-left"></i></button>
+        <button class="gbtn" id="g-today" style="font-size:11px;font-weight:800;padding:4px 10px;background:var(--yellow);color:#000;border-color:var(--yellow)">HOJE</button>
         <span id="g-range" style="font-size:12px;color:var(--text2)"></span>
         <button class="gbtn" id="g-next"><i class="ti ti-chevron-right"></i></button>
         <select class="gsel" id="g-area"><option value="">Todas as áreas</option></select>
@@ -1357,6 +1358,7 @@ function renderGantt(skipCenter){
 }
 document.getElementById('g-prev').addEventListener('click',()=>{state.ganttOffset=Math.max(0,state.ganttOffset-1);renderGantt(true);});
 document.getElementById('g-next').addEventListener('click',()=>{state.ganttOffset++;renderGantt(true);});
+document.getElementById('g-today').addEventListener('click',()=>{centerOnToday();});
 document.getElementById('g-area').addEventListener('change',e=>{state.ganttArea=e.target.value;renderGantt();});
 document.getElementById('add-sup-btn').addEventListener('click',openAddSup);
 
