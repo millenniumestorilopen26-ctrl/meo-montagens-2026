@@ -2313,25 +2313,91 @@ function _renderUtilizadoresInner(){
   toolsDiv.innerHTML='<div class="card" style="border-left:4px solid #ef4444;margin-top:8px">'+
     '<div class="ch"><div class="ct" style="color:#ef4444"><i class="ti ti-alert-triangle"></i>Ferramentas Admin</div></div>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0">'+
-    '<button id="clear-records-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar TODOS os registos</button>'+
+    '<button id="clear-records-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar registos por dia</button>'+
     '<button id="clear-sups-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar fornecedores Firebase</button>'+
     '</div></div>';
   pgEl.appendChild(toolsDiv);
 
   const crBtn = document.getElementById('clear-records-btn');
   if(crBtn) crBtn.addEventListener('click', async()=>{
-    if(!confirm('⚠️ Tens a certeza? Apaga TODOS os registos diários (assiduidade, progresso, observações, fotos). Esta acção é irreversível!'))return;
-    if(!confirm('Confirmas que queres apagar TUDO?'))return;
-    crBtn.disabled=true; crBtn.textContent='A limpar...';
+    // Load all records from Firebase to see which days exist
+    crBtn.disabled=true; crBtn.textContent='A carregar dias...';
     try{
-      await fbSet('records', null);
-      // Clear local cache
-      Object.keys(_recCache).forEach(k=>delete _recCache[k]);
-      showToast('✅ Todos os registos eliminados!');
-      crBtn.textContent='✅ Feito!';
+      const allRecs = await fbGet('records');
+      if(!allRecs){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
+      const days = Object.keys(allRecs).sort();
+      if(!days.length){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
+
+      // Show modal with checkboxes per day
+      const existing = document.getElementById('clear-days-modal');
+      if(existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'clear-days-modal';
+      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+      
+      const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const DPS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      
+      const dayRows = days.map(d=>{
+        const dt = new Date(d+'T12:00:00');
+        const nRecs = Object.keys(allRecs[d]||{}).length;
+        const label = DPS[dt.getDay()]+' '+String(dt.getDate()).padStart(2,'0')+' '+MESES[dt.getMonth()];
+        return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">'+
+          '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
+          '<span style="flex:1;font-size:13px;font-weight:700">'+label+'</span>'+
+          '<span style="font-size:11px;color:rgba(255,255,255,.4)">'+nRecs+' registo'+(nRecs!==1?'s':'')+'</span>'+
+          '</label>';
+      }).join('');
+
+      modal.innerHTML='<div style="background:#111;border:1px solid #333;border-radius:14px;width:100%;max-width:440px;max-height:85vh;display:flex;flex-direction:column">'+
+        '<div style="padding:18px 20px 14px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center">'+
+          '<div style="font-size:15px;font-weight:900;color:#fff">Selecciona os dias a apagar</div>'+
+          '<button id="cdm-close" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1">✕</button>'+
+        '</div>'+
+        '<div style="padding:14px 20px;border-bottom:1px solid #222;display:flex;gap:8px">'+
+          '<button id="cdm-selall" style="background:rgba(255,255,255,.08);border:1px solid #333;color:#fff;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Seleccionar tudo</button>'+
+          '<button id="cdm-selnone" style="background:rgba(255,255,255,.08);border:1px solid #333;color:#fff;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Limpar selecção</button>'+
+        '</div>'+
+        '<div style="flex:1;overflow-y:auto;padding:14px 20px">'+dayRows+'</div>'+
+        '<div style="padding:14px 20px;border-top:1px solid #222">'+
+          '<button id="cdm-delete" style="width:100%;background:#ef4444;border:none;color:#fff;border-radius:8px;padding:12px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit">🗑️ Apagar dias seleccionados</button>'+
+        '</div>'+
+      '</div>';
+
+      document.body.appendChild(modal);
+      crBtn.disabled=false; crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';
+
+      document.getElementById('cdm-close').onclick = ()=>modal.remove();
+      modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+      document.getElementById('cdm-selall').onclick = ()=>modal.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true);
+      document.getElementById('cdm-selnone').onclick = ()=>modal.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
+
+      document.getElementById('cdm-delete').onclick = async()=>{
+        const selected = [...modal.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value);
+        if(!selected.length){showToast('Selecciona pelo menos um dia.');return;}
+        if(!confirm('Apagar '+selected.length+' dia(s)? Esta acção é irreversível.'))return;
+        const btn = document.getElementById('cdm-delete');
+        btn.disabled=true; btn.textContent='A apagar...';
+        let ok=0,err=0;
+        for(const d of selected){
+          try{
+            await fbSet('records/'+d, null);
+            // Clear from local cache
+            Object.keys(_recCache).filter(k=>k.includes(d.replace(/-/g,''))||k.split('__')[1]===d).forEach(k=>delete _recCache[k]);
+            ok++;
+          }catch(e){err++;}
+        }
+        modal.remove();
+        showToast('✅ '+ok+' dia(s) apagado(s)'+(err?' · '+err+' erro(s)':'')+'!');
+        if(state.page==='mapa')renderGantt();
+        if(state.page==='registo')renderReg();
+        if(state.page==='relatorio')renderRel();
+        renderDash();
+      };
     }catch(e){
       showToast('❌ Erro: '+e.message);
-      crBtn.disabled=false; crBtn.textContent='Limpar TODOS os registos';
+      crBtn.disabled=false; crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';
     }
   });
 
