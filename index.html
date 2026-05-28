@@ -145,12 +145,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .gwrap{overflow-x:auto;border-radius:var(--r);border:2px solid var(--dark);box-shadow:var(--sh)}
 .gt{border-collapse:collapse;width:max-content}
 .gt th{background:var(--dark);color:rgba(255,255,255,.78);font-size:10px;font-weight:800;padding:9px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;min-width:95px;position:sticky;top:0;z-index:3;text-transform:uppercase;letter-spacing:.3px}
-.gt th.sup-th{min-width:155px;text-align:left;padding-left:13px;position:sticky;left:0;z-index:4;background:var(--dark)}
+.gt th.sup-th{min-width:100px;max-width:120px;text-align:left;padding-left:13px;position:sticky;left:0;z-index:4;background:var(--dark)}
 .gt th.wknd-th{background:var(--dark3);color:rgba(255,255,255,.3)}
 .gt th.today-th{background:var(--yellow);color:var(--dark);font-weight:900}
 .gt td{border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
 .g-sup-td{position:sticky;left:0;background:var(--white);z-index:2;padding:0 11px;min-width:155px;border-right:2px solid var(--dark)}
-.g-day-td{min-width:clamp(90px,28vw,140px);height:30px;cursor:pointer;transition:background .1s}
+.g-day-td{min-width:clamp(80px,25vw,130px);height:30px;cursor:pointer;transition:background .1s}
 .g-day-td:hover{background:var(--yellow-l)}
 .g-day-td.wknd{background:#fafafa}
 .g-day-td.tday{background:var(--yellow-l);border-left:2px solid var(--yellow)}
@@ -2017,7 +2017,7 @@ function openPhotoModal(sid,dateStr){
   const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()]+' '+d.getFullYear();
   function draw(){
     getModalRoot().innerHTML=
-      '<div class="modal-bg" id="ph-bg"><div class="modal" style="max-width:420px">'+
+      '<div class="modal-bg" id="ph-bg"><div class="modal" style="max-width:min(420px,96vw)">'+
       '<div class="mhdr"><h3><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+sup.color+';margin-right:6px"></span>'+
       sup.name+' — '+dayLabel+'</h3><button id="ph-close" class="mcls">✕</button></div>'+
       '<div class="mbdy">'+
