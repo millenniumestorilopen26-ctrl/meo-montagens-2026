@@ -1258,7 +1258,7 @@ function renderGantt(skipCenter){
       const task=act?act.split('—')[0].trim():'';
       const zone=act&&act.includes('—')?act.split('—').slice(1).join('—').trim():'';
       return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" data-open="'+sup.id+'||'+d.toISOString()+'" style="padding:4px 5px;vertical-align:top;cursor:pointer">'+
-        (act?'<div style="display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:flex-start;gap:3px">'+badge+'<div style="font-size:9px;color:var(--text);font-weight:600;white-space:normal;line-height:1.35;word-break:break-word;max-width:80px">'+task+'</div></div>'+(zone?'<div style="font-size:8px;color:var(--text3);padding-left:20px">'+zone+'</div>':'')+'</div>':'<span style="color:#ddd;font-size:9px">—</span>')+
+        (act?'<div style="display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:flex-start;gap:3px">'+badge+'<div style="font-size:9px;color:var(--text);font-weight:600;white-space:pre-wrap;line-height:1.4;word-break:break-word">'+task+'</div></div>'+(zone?'<div style="font-size:8px;color:var(--text3);padding-left:20px">'+zone+'</div>':'')+'</div>':'<span style="color:#ddd;font-size:9px">—</span>')+
         '</td>';
     }).join('')+'</tr>';
     // Attendance row - quick edit for admins
