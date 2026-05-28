@@ -2335,16 +2335,30 @@ function _renderUtilizadoresInner(){
     try{
       const allRecs = await fbGet('records');
       if(!allRecs){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
-         // Extract dates from Firebase keys like "7cores_2026-04-21"
+         // Extract dates from Firebase keys AND local _recCache
       const dateMap = {};
+      // From Firebase
       Object.keys(allRecs).forEach(k=>{
-        // Key format: "supplierid_YYYY-MM-DD"
         const parts = k.split('_');
-        // Date is the last part (YYYY-MM-DD)
         const datePart = parts[parts.length-1];
         if(datePart && datePart.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
-          if(!dateMap[datePart])dateMap[datePart]=[];
-          dateMap[datePart].push(k);
+          const p=datePart.split('-');
+          const norm=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');
+          if(!dateMap[norm])dateMap[norm]={fbKeys:[],cacheKeys:[]};
+          dateMap[norm].fbKeys.push(k);
+        }
+      });
+      // Also from local _recCache (keys like "7cores__2026-5-25")
+      Object.keys(_recCache).forEach(k=>{
+        const parts = k.split('__');
+        if(parts.length>=2){
+          const datePart = parts[parts.length-1];
+          if(datePart && datePart.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
+            const p=datePart.split('-');
+            const norm=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');
+            if(!dateMap[norm])dateMap[norm]={fbKeys:[],cacheKeys:[]};
+            if(!dateMap[norm].cacheKeys.includes(k))dateMap[norm].cacheKeys.push(k);
+          }
         }
       });
       const days = Object.keys(dateMap).sort();
@@ -2366,7 +2380,7 @@ function _renderUtilizadoresInner(){
         // d is "YYYY-MM-DD"
         const dParts = d.split('-');
         const dt = new Date(parseInt(dParts[0]), parseInt(dParts[1])-1, parseInt(dParts[2]));
-        const nRecs = (dateMap[d]||[]).length;
+        const nRecs = ((dateMap[d]||{}).fbKeys||[]).length + ((dateMap[d]||{}).cacheKeys||[]).length;
         const label = dParts[2].padStart(2,'0')+'/'+dParts[1].padStart(2,'0')+'/'+dParts[0]; // DD/MM/YYYY
         return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" >'+
           '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
@@ -2407,18 +2421,22 @@ function _renderUtilizadoresInner(){
         let ok=0,err=0;
         for(const d of selected){
           try{
-            // Delete all Firebase keys for this date
-            const keysForDate = dateMap[d]||[];
-            for(const k of keysForDate){
+            // Delete Firebase keys
+            const fbKeys = (dateMap[d]||{}).fbKeys||[];
+            for(const k of fbKeys){
               await fbSet('records/'+k, null);
             }
-            // Clear local _recCache - keys are "supplierid__YYYY-M-D" (double underscore, no zero-pad)
-            // d is "2026-04-21", cache key date part is "2026-4-21"
-            const dParts = d.split('-');
-            const cacheDate = dParts[0]+'-'+parseInt(dParts[1])+'-'+parseInt(dParts[2]);
+            // Delete local cache keys
+            const cacheKeys = (dateMap[d]||{}).cacheKeys||[];
+            cacheKeys.forEach(ck=>delete _recCache[ck]);
+            // Also clear by date pattern (belt and suspenders)
+            const dParts2 = d.split('-');
+            const cacheDate = dParts2[0]+'-'+parseInt(dParts2[1])+'-'+parseInt(dParts2[2]);
             Object.keys(_recCache).forEach(ck=>{
-              if(ck.endsWith('__'+cacheDate)||ck.includes('__'+cacheDate))delete _recCache[ck];
+              if(ck.includes('__'+cacheDate))delete _recCache[ck];
             });
+            // Clear localStorage for these keys
+            cacheKeys.forEach(ck=>{try{localStorage.removeItem('meo_photos_'+ck);}catch(e){}});
             ok++;
           }catch(e){console.error('Delete error:',e);err++;}
         }
