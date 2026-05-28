@@ -2335,36 +2335,21 @@ function _renderUtilizadoresInner(){
     try{
       const allRecs = await fbGet('records');
       if(!allRecs){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
-         // Group keys by date - robust extraction
+         // Extract dates from Firebase keys like "7cores_2026-04-21"
       const dateMap = {};
       Object.keys(allRecs).forEach(k=>{
-        // Keys look like "7cores_2026-5-28" - find date pattern after last underscore-year
-        const m = k.match(/_(\d{4}[-]\d{1,2}[-]\d{1,2})$/);
-        if(m){
-          const p=m[1].split('-');
-          const norm=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');
-          if(!dateMap[norm])dateMap[norm]=[];
-          dateMap[norm].push(k);
-        } else {
-          // Fallback: try splitting differently
-          const segs=k.split('_');
-          if(segs.length>=2){
-            const last=segs[segs.length-1];
-            const prev=segs[segs.length-2];
-            // Try "YYYY-M-D" in last segment or "YYYY" in prev + "M-D" in last
-            const m2=last.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-            if(m2){
-              const norm=m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
-              if(!dateMap[norm])dateMap[norm]=[];
-              dateMap[norm].push(k);
-            }
-          }
+        // Key format: "supplierid_YYYY-MM-DD"
+        const parts = k.split('_');
+        // Date is the last part (YYYY-MM-DD)
+        const datePart = parts[parts.length-1];
+        if(datePart && datePart.match(/^\d{4}-\d{2}-\d{2}$/)){
+          if(!dateMap[datePart])dateMap[datePart]=[];
+          dateMap[datePart].push(k);
         }
       });
       const days = Object.keys(dateMap).sort();
       if(!days.length){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
 
-      // Show modal with checkboxes per day
       const existing = document.getElementById('clear-days-modal');
       if(existing) existing.remove();
 
@@ -2375,12 +2360,14 @@ function _renderUtilizadoresInner(){
       const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
       const DPS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
       
-      const MESES2=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-      const DPS2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      const MESES3=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const DPS3=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
       const dayRows = days.map(d=>{
-        const dt = new Date(d+'T12:00:00');
+        // d is "YYYY-MM-DD"
+        const dParts = d.split('-');
+        const dt = new Date(parseInt(dParts[0]), parseInt(dParts[1])-1, parseInt(dParts[2]));
         const nRecs = (dateMap[d]||[]).length;
-        const label = DPS2[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+' '+MESES2[dt.getMonth()]+' '+dt.getFullYear();
+        const label = DPS3[dt.getDay()]+' '+dParts[2]+'/'+dParts[1]+'/'+dParts[0];
         return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" >'+
           '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
           '<span style="flex:1;font-size:13px;font-weight:700">'+label+'</span>'+
