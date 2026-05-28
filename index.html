@@ -2328,8 +2328,12 @@ function _renderUtilizadoresInner(){
       // Group keys by date (keys like "7cores_2026-05-25")
       const dateMap = {};
       Object.keys(allRecs).forEach(k=>{
-        const m = k.match(/(\d{4}-\d{2}-\d{2})$/);
-        if(m){if(!dateMap[m[1]])dateMap[m[1]]=0;dateMap[m[1]]++;}
+                const mDate = k.match(/(\d{4}-\d{1,2}-\d{1,2})$/);
+        if(mDate){
+          const parts = mDate[1].split('-');
+          const norm = parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
+          if(!dateMap[norm])dateMap[norm]=0;dateMap[norm]++;
+        }
       });
       const days = Object.keys(dateMap).sort();
       if(!days.length){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
