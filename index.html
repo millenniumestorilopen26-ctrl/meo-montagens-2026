@@ -475,7 +475,7 @@ function getModalRoot(){
   if(!mr){
     mr = document.createElement('div');
     mr.id = 'modal-root';
-    document.body.appendChild(mr);
+    (document.body||document.documentElement).appendChild(mr);
   }
   return mr;
 }
@@ -2025,7 +2025,7 @@ function openPhotoModal(sid,dateStr){
   const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()]+' '+d.getFullYear();
   function draw(){
     getModalRoot().innerHTML=
-      '<div class="modal-bg" id="ph-bg"><div class="modal" style="max-width:min(420px,96vw)">'+
+      '<div class="modal-bg mc" id="ph-bg" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999"><div class="modal" style="max-width:min(420px,96vw)">'+
       '<div class="mhdr"><h3><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+sup.color+';margin-right:6px"></span>'+
       sup.name+' — '+dayLabel+'</h3><button id="ph-close" class="mcls">✕</button></div>'+
       '<div class="mbdy">'+
