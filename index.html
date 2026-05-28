@@ -2335,14 +2335,30 @@ function _renderUtilizadoresInner(){
     try{
       const allRecs = await fbGet('records');
       if(!allRecs){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
-      // Group keys by date (keys like "7cores_2026-05-25")
+         // Group keys by date - robust extraction
       const dateMap = {};
       Object.keys(allRecs).forEach(k=>{
-                const mDate = k.match(/(\d{4}-\d{1,2}-\d{1,2})$/);
-        if(mDate){
-          const parts = mDate[1].split('-');
-          const norm = parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
-          if(!dateMap[norm])dateMap[norm]=0;dateMap[norm]++;
+        // Keys look like "7cores_2026-5-28" - find date pattern after last underscore-year
+        const m = k.match(/_(\d{4}[-]\d{1,2}[-]\d{1,2})$/);
+        if(m){
+          const p=m[1].split('-');
+          const norm=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');
+          if(!dateMap[norm])dateMap[norm]=[];
+          dateMap[norm].push(k);
+        } else {
+          // Fallback: try splitting differently
+          const segs=k.split('_');
+          if(segs.length>=2){
+            const last=segs[segs.length-1];
+            const prev=segs[segs.length-2];
+            // Try "YYYY-M-D" in last segment or "YYYY" in prev + "M-D" in last
+            const m2=last.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if(m2){
+              const norm=m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
+              if(!dateMap[norm])dateMap[norm]=[];
+              dateMap[norm].push(k);
+            }
+          }
         }
       });
       const days = Object.keys(dateMap).sort();
@@ -2363,7 +2379,7 @@ function _renderUtilizadoresInner(){
       const DPS2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
       const dayRows = days.map(d=>{
         const dt = new Date(d+'T12:00:00');
-        const nRecs = dateMap[d]||0;
+        const nRecs = (dateMap[d]||[]).length;
         const label = DPS2[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+' '+MESES2[dt.getMonth()]+' '+dt.getFullYear();
         return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" >'+
           '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
@@ -2404,8 +2420,8 @@ function _renderUtilizadoresInner(){
         let ok=0,err=0;
         for(const d of selected){
           try{
-            // Delete all supplier records for this date
-            const keysForDate = Object.keys(allRecs).filter(k=>k.endsWith(d));
+            // Delete all keys for this date
+            const keysForDate = dateMap[d]||[];
             for(const k of keysForDate){
               await fbSet('records/'+k, null);
             }
