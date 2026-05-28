@@ -1192,14 +1192,11 @@ function renderDash(){
 // ── GANTT ─────────────────────────────────────────────────────────────────
 function getViewDays(){
   const days=[];
-  const isMob = window.innerWidth < 768;
-  const count = isMob ? 6 : 14;
-  // Build from today: today is always at center position
-  const todayMidnight = new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
-  const half = Math.floor(count/2);
+  const count=5; // 2 antes + hoje + 2 depois
+  const todayMidnight=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
   for(let i=0;i<count;i++){
-    const d = new Date(todayMidnight);
-    d.setDate(d.getDate() - half + i + state.ganttOffset);
+    const d=new Date(todayMidnight);
+    d.setDate(d.getDate()-2+i+state.ganttOffset);
     days.push(d);
   }
   return days;
