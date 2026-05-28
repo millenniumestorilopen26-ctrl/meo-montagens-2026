@@ -1204,8 +1204,8 @@ function renderDash(){
 // ── GANTT ─────────────────────────────────────────────────────────────────
 function getViewDays(){
   const days=[];
-  const isMob=window.innerWidth<600;
-  const count=isMob?3:7;
+  const w=window.innerWidth;
+  const count=w<480?3:w<768?5:7;
   const half=Math.floor(count/2);
   const todayMidnight=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
   for(let i=0;i<count;i++){
@@ -1293,7 +1293,7 @@ function renderGantt(skipCenter){
           '<div style="display:flex;flex-direction:column;gap:2px">'+
           '<input class="g-obs-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" value="'+obs.replace(/"/g,'&quot;')+'" placeholder="Obs..." '+
           'style="width:100%;font-size:9px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text);font-family:inherit">'+
-          '<button onclick="event.stopPropagation();openPhotoModal(\''+sup.id+'\',\''+d.toISOString()+'\')" style="font-size:9px;background:'+(ph?'var(--blue)':'var(--bg)')+';color:'+(ph?'#fff':'var(--text3)')+';border:1px solid var(--border);border-radius:3px;padding:1px 4px;cursor:pointer;font-family:inherit">'+
+          '<button class="g-ph-btn" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" style="font-size:9px;background:'+(ph?'var(--blue)':'var(--bg)')+';color:'+(ph?'#fff':'var(--text3)')+';border:1px solid var(--border);border-radius:3px;padding:1px 4px;cursor:pointer;font-family:inherit">'+
           '📎'+(ph?ph:'+')+' foto'+(ph!==1?'s':'')+'</button>'+
           '</div></td>';
       }
@@ -1346,10 +1346,10 @@ function renderGantt(skipCenter){
     inp.addEventListener('click',e=>e.stopPropagation());
   });
   // Photo button opens day modal on photos tab
-  document.querySelectorAll('.g-photo-btn').forEach(btn=>{
+  document.querySelectorAll('.g-ph-btn').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
-      openDayModal(btn.dataset.sid,new Date(btn.dataset.date));
+      openPhotoModal(btn.dataset.sid,btn.dataset.date);
     });
   });
   // Quick attendance toggle
