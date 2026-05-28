@@ -2343,7 +2343,7 @@ function _renderUtilizadoresInner(){
         const dt = new Date(d+'T12:00:00');
         const nRecs = Object.keys(allRecs[d]||{}).length;
         const label = DPS[dt.getDay()]+' '+String(dt.getDate()).padStart(2,'0')+' '+MESES[dt.getMonth()];
-        return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">'+
+        return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" >'+
           '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
           '<span style="flex:1;font-size:13px;font-weight:700">'+label+'</span>'+
           '<span style="font-size:11px;color:rgba(255,255,255,.4)">'+nRecs+' registo'+(nRecs!==1?'s':'')+'</span>'+
