@@ -2407,23 +2407,30 @@ function _renderUtilizadoresInner(){
         let ok=0,err=0;
         for(const d of selected){
           try{
-            // Delete all keys for this date
+            // Delete all Firebase keys for this date
             const keysForDate = dateMap[d]||[];
             for(const k of keysForDate){
               await fbSet('records/'+k, null);
             }
-            // Clear local cache for this date
-            const cacheKey = d; // YYYY-MM-DD
-            Object.keys(_recCache).forEach(k=>{if(k.includes(cacheKey))delete _recCache[k];});
+            // Clear local _recCache - keys are "supplierid__YYYY-M-D" (double underscore, no zero-pad)
+            // d is "2026-04-21", cache key date part is "2026-4-21"
+            const dParts = d.split('-');
+            const cacheDate = dParts[0]+'-'+parseInt(dParts[1])+'-'+parseInt(dParts[2]);
+            Object.keys(_recCache).forEach(ck=>{
+              if(ck.endsWith('__'+cacheDate)||ck.includes('__'+cacheDate))delete _recCache[ck];
+            });
             ok++;
-          }catch(e){err++;}
+          }catch(e){console.error('Delete error:',e);err++;}
         }
         modal.remove();
         showToast('✅ '+ok+' dia(s) apagado(s)'+(err?' · '+err+' erro(s)':'')+'!');
-        if(state.page==='mapa')renderGantt();
-        if(state.page==='registo')renderReg();
-        if(state.page==='relatorio')renderRel();
-        renderDash();
+        // Force reload from Firebase to ensure fresh data
+        loadRecordsFromFirebase().then(()=>{
+          if(state.page==='mapa')renderGantt();
+          if(state.page==='registo')renderReg();
+          if(state.page==='relatorio')renderRel();
+          renderDash();
+        });
       };
     }catch(e){
       showToast('❌ Erro: '+e.message);
