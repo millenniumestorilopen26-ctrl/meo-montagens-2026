@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>MEO v28B — Gestão de Montagens</title>
+<title>Millennium Estoril Open 2026 — Gestão de Montagens</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1194,13 +1194,14 @@ function getViewDays(){
   const days=[];
   const isMob = window.innerWidth < 768;
   const count = isMob ? 6 : 14;
-  // ganttOffset is relative to today (0=today centered, +1=tomorrow centered, etc)
-  const t=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
-  const s=new Date(START.getFullYear(),START.getMonth(),START.getDate());
-  const todayFromStart=Math.round((t-s)/86400000);
-  const centerDay=todayFromStart+state.ganttOffset;
-  const startDay=Math.max(0,centerDay-Math.floor(count/2));
-  for(let i=0;i<count;i++)days.push(addDays(START,startDay+i));
+  // Build from today: today is always at center position
+  const todayMidnight = new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
+  const half = Math.floor(count/2);
+  for(let i=0;i<count;i++){
+    const d = new Date(todayMidnight);
+    d.setDate(d.getDate() - half + i + state.ganttOffset);
+    days.push(d);
+  }
   return days;
 }
 
