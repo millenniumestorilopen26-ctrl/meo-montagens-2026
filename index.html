@@ -1294,7 +1294,21 @@ function renderGantt(skipCenter){
     }).join('')+'</tr>';
   });
   html+='</tbody></table>';
-  const gi=document.getElementById('g-inner');if(gi)gi.innerHTML=html;
+  const gi=document.getElementById('g-inner');if(gi){gi.innerHTML=html;
+    // Scroll today into center view
+    setTimeout(()=>{
+      const todayTh=gi.querySelector('.today-th');
+      if(todayTh){
+        const wrap=gi.closest('.gwrap')||gi.parentElement;
+        if(wrap){
+          const cellLeft=todayTh.offsetLeft;
+          const cellW=todayTh.offsetWidth;
+          const wrapW=wrap.clientWidth;
+          wrap.scrollLeft=cellLeft-(wrapW/2)+(cellW/2);
+        }
+      }
+    },50);
+  }
   document.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',e=>{
     const[sid,ds]=e.currentTarget.dataset.open.split('||');
     openDayModal(sid,new Date(ds));
