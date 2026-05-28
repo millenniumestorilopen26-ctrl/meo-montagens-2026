@@ -459,6 +459,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
   <div class="botnav-inner">
     <button class="bn-btn on" data-pg="dashboard"><i class="ti ti-layout-dashboard">
 
+<div id="modal-root"></div>
 <script>
 // ── CLOUDINARY CONFIG ─────────────────────────────────────────────────────
 const CLOUDINARY_CLOUD = 'dbcuonkqy';
@@ -1996,7 +1997,7 @@ function openDayModal(sid,d){
   const r=getRec(sid,d);const photos=[...(r.photos||[])];
   const dayLabel=DPT[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+' '+MSHT[d.getMonth()]+' '+d.getFullYear();
   function draw(){
-    document.getElementById('modal-root').innerHTML=
+    (document.getElementById('modal-root')||document.body).innerHTML=
       '<div class="modal-bg" id="mbg"><div class="modal">'+
       '<div class="mhdr"><h3><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+sup.color+';margin-right:7px"></span>'+sup.name+' — '+dayLabel+'</h3><button class="mcls" id="m-close">✕</button></div>'+
       '<div class="mbody">'+
@@ -2019,7 +2020,7 @@ function openDayModal(sid,d){
       '</div><div class="mfoot"><button class="btn btn-out" id="m-cancel">Cancelar</button><button class="btn btn-dark" id="m-save"><i class="ti ti-device-floppy"></i>Guardar</button></div>'+
       '</div></div>';
 
-    const close=()=>document.getElementById('modal-root').innerHTML='';
+    const close=()=>(document.getElementById('modal-root')||document.body).innerHTML='';
     document.getElementById('m-close').onclick=close;document.getElementById('m-cancel').onclick=close;
     document.getElementById('mbg').addEventListener('click',e=>{if(e.target.id==='mbg')close();});
     document.querySelectorAll('.pill[data-v]').forEach(p=>p.addEventListener('click',()=>{
@@ -2874,6 +2875,4 @@ if(authCheckSession()){
 
 
 </script>
-<div id="modal-root"></div>
-</body>
 </html>
