@@ -158,7 +158,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .gt th.today-th{background:var(--yellow);color:var(--dark);font-weight:900}
 .gt td{border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
 .g-sup-td{position:sticky;left:0;background:var(--white);z-index:2;padding:0 11px;min-width:155px;border-right:2px solid var(--dark)}
-.g-day-td{min-width:clamp(80px,25vw,130px);height:30px;cursor:pointer;transition:background .1s}
+.g-day-td{min-width:clamp(80px,25vw,130px);min-height:30px;cursor:pointer;transition:background .1s}
 .g-day-td:hover{background:var(--yellow-l)}
 .g-day-td.wknd{background:#fafafa}
 .g-day-td.tday{background:var(--yellow-l);border-left:2px solid var(--yellow)}
@@ -1255,10 +1255,8 @@ function renderGantt(skipCenter){
           '</td>';
       }
       const badge=zoneBadge(act);
-      const task=act?act.split('—')[0].trim():'';
-      const zone=act&&act.includes('—')?act.split('—').slice(1).join('—').trim():'';
       return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" data-open="'+sup.id+'||'+d.toISOString()+'" style="padding:4px 5px;vertical-align:top;cursor:pointer">'+
-        (act?'<div style="display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:flex-start;gap:3px">'+badge+'<div style="font-size:9px;color:var(--text);font-weight:600;white-space:pre-wrap;line-height:1.4;word-break:break-word">'+task+'</div></div>'+(zone?'<div style="font-size:8px;color:var(--text3);padding-left:20px">'+zone+'</div>':'')+'</div>':'<span style="color:#ddd;font-size:9px">—</span>')+
+        (act?'<div style="display:flex;align-items:flex-start;gap:3px">'+badge+'<div style="font-size:9px;color:var(--text);font-weight:600;white-space:normal;line-height:1.4;word-break:break-word">'+act+'</div></div>':'<span style="color:#ddd;font-size:9px">—</span>')+
         '</td>';
     }).join('')+'</tr>';
     // Attendance row - quick edit for admins
