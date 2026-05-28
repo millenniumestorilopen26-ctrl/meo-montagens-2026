@@ -637,6 +637,28 @@ async function saveUsersToFirebase(users){
   }catch(e){console.warn('Firebase save users:', e);}
 }
 
+async function saveSupsToFirebase(){
+  try{
+    const data=SUPS.map(s=>({id:s.id,name:s.name,area:s.area,color:s.color,active:s.active,contact:s.contact||''}));
+    await fbSet('sups',data);
+  }catch(e){console.warn('Firebase save sups:',e);}
+}
+
+async function loadSupsFromFirebase(){
+  try{
+    const raw=await fbGet('sups');
+    if(!raw)return;
+    const data=Array.isArray(raw)?raw:Object.values(raw);
+    if(!data||data.length===0)return;
+    // Merge: keep defaults, add/update from Firebase
+    data.forEach(fs=>{
+      const idx=SUPS.findIndex(s=>s.id===fs.id);
+      if(idx>=0){SUPS[idx]={...SUPS[idx],...fs};}
+      else{SUPS.push({id:fs.id,name:fs.name,area:fs.area||'',color:fs.color||'#c9a227',active:fs.active!==false,contact:fs.contact||'',fromFirebase:true});}
+    });
+  }catch(e){console.warn('Firebase load sups:',e);}
+}
+
 async function loadUsersFromFirebase(){
   try{
     const raw = await fbGet('users');
@@ -2114,6 +2136,7 @@ function openAddSup(){
       if(ops.length===0&&supStart&&supEnd)SCHED_ENTRIES.push({sid:id,act:name+' — '+area,s:ds2a(supStart),e:ds2a(supEnd)});
       ops.forEach(op=>{const entry={sid:id,act:op.act,s:ds2a(op.start),e:ds2a(op.end)};if(op.wd)entry.wd=op.wd;SCHED_ENTRIES.push(entry);});
       if(!SCHED_DATA[id]){SCHED_DATA[id]={label:name,tasks:[]};state.schedTasks[id]=[];}
+      saveSupsToFirebase();
       seedSchedule();close();
       renderDash();if(state.page==='mapa')renderGantt();if(state.page==='registo')renderReg();if(state.page==='gestao')renderGestao();
       showToast(name+' adicionado!');
@@ -2280,38 +2303,23 @@ function _renderUtilizadoresInner(){
       '</div>').join('')+
     '</div>';
 
-  document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',async()=>{
-    b.disabled=true;b.textContent='A aprovar...';
+  document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',()=>{
     const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
-    if(u){
-      u.role='viewer';
-      _origSaveUsers(users);
-      try{await saveUsersToFirebase(users);showToast('✅ '+u.name+' aprovado!');}
-      catch(e){showToast('⚠️ Guardado localmente. Firebase: '+e.message);}
-      _renderUtilizadoresInner();
-    }
+    if(u){u.role='viewer';saveUsers(users);renderUtilizadores();showToast(u.name+' aprovado!');}
   }));
-  document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',async()=>{
-    if(!confirm('Rejeitar pedido?'))return;
-    b.disabled=true;
-    const users=getUsers();const filtered=users.filter(u=>u.email!==b.dataset.email);
-    _origSaveUsers(filtered);
-    try{await saveUsersToFirebase(filtered);showToast('❌ Pedido rejeitado');}
-    catch(e){showToast('⚠️ Removido localmente. Firebase: '+e.message);}
-    _renderUtilizadoresInner();
+  document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('Rejeitar acesso?'))return;
+    const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
+    if(u){u.role='rejected';saveUsers(users);renderUtilizadores();}
   }));
   document.querySelectorAll('.usr-role').forEach(sel=>sel.addEventListener('change',()=>{
     const users=getUsers();const u=users.find(x=>x.email===sel.dataset.email);
     if(u){u.role=sel.value;saveUsers(users);showToast('Função actualizada!');renderUtilizadores();}
   }));
-  document.querySelectorAll('.usr-del').forEach(b=>b.addEventListener('click',async()=>{
+  document.querySelectorAll('.usr-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('Remover utilizador?'))return;
-    b.disabled=true;
-    let users=getUsers();const filtered=users.filter(u=>u.email!==b.dataset.email);
-    _origSaveUsers(filtered);
-    try{await saveUsersToFirebase(filtered);showToast('🗑️ Utilizador removido!');}
-    catch(e){showToast('⚠️ Removido localmente. Firebase: '+e.message);}
-    _renderUtilizadoresInner();
+    let users=getUsers();users=users.filter(u=>u.email!==b.dataset.email);
+    saveUsers(users);renderUtilizadores();
   }));
   const addBtn=document.getElementById('add-user-btn');
   if(addBtn)addBtn.addEventListener('click',()=>openAddUserModal());
@@ -2448,6 +2456,32 @@ function importExcel(file){
         }
       }
 
+      // ── Import Fornecedores ───────────────────────────────────
+      const wsF = wb.Sheets['Fornecedores'];
+      if(wsF){
+        const rowsF = XLSX.utils.sheet_to_json(wsF, {header:1});
+        let newSups = 0;
+        rowsF.slice(1).forEach(row=>{
+          if(!row[0]||!row[1])return;
+          const id = String(row[0]).trim().toLowerCase().replace(/\s+/g,'_');
+          const name = String(row[1]).trim();
+          const area = String(row[2]||'').trim();
+          const active = String(row[3]||'Sim').trim().toLowerCase()!=='não';
+          const color = String(row[4]||'#c9a227').trim();
+          const existing = SUPS.find(s=>s.id===id||s.name===name);
+          if(existing){
+            existing.area=area||existing.area;
+            existing.active=active;
+            existing.color=color||existing.color;
+          } else {
+            SUPS.push({id,name,area,color,active,contact:''});
+            newSups++;
+          }
+        });
+        saveSupsToFirebase();
+        imported += newSups;
+      }
+
       // ── Import Contactos ───────────────────────────────────
       const ws4 = wb.Sheets['Contactos'];
       if(ws4){
@@ -2498,11 +2532,10 @@ function showAuthMsg(id, msg, isErr){
   el.textContent=msg;el.className='auth-msg '+(isErr?'err':'ok');el.style.display='block';
 }
 
-document.getElementById('login-btn').addEventListener('click',async ()=>{
+document.getElementById('login-btn').addEventListener('click',()=>{
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   if(!email||!pass){showAuthMsg('login-msg','Preenche email e password.',true);return;}
-  await loadUsersFromFirebase();
   const result=authLogin(email,pass);
   if(result.pending){
     document.getElementById('auth-screen').style.display='none';
@@ -2590,7 +2623,8 @@ function launchApp(){
   Promise.all([
     loadRecordsFromFirebase(),
     loadContactsFromFirebase(),
-    loadUsersFromFirebase().then(u=>{if(u){}})
+    loadUsersFromFirebase().then(u=>{if(u){}}),
+    loadSupsFromFirebase()
   ]).then(()=>{
     initUsers();
     loadContacts();
