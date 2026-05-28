@@ -1205,7 +1205,7 @@ function renderDash(){
 function getViewDays(){
   const days=[];
   const w=window.innerWidth;
-  const count=w<900?3:7;
+  const count=w<900?3:6;
   const half=Math.floor(count/2);
   const todayMidnight=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
   for(let i=0;i<count;i++){
@@ -1298,8 +1298,7 @@ function renderGantt(skipCenter){
           '<div style="display:flex;flex-direction:column;gap:2px">'+
           '<input class="g-obs-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" value="'+obs.replace(/"/g,'&quot;')+'" placeholder="Obs..." '+
           'style="width:100%;font-size:9px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text);font-family:inherit">'+
-          '<button class="g-ph-btn" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" style="font-size:9px;background:'+(ph?'var(--blue)':'var(--bg)')+';color:'+(ph?'#fff':'var(--text3)')+';border:1px solid var(--border);border-radius:3px;padding:1px 4px;cursor:pointer;font-family:inherit">'+
-          '📎'+(ph?ph:'+')+' foto'+(ph!==1?'s':'')+'</button>'+
+          
           '</div></td>';
       }
       const short=obs.length>12?obs.slice(0,10)+'…':obs;
