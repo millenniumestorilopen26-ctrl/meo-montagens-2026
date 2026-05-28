@@ -1021,7 +1021,11 @@ const SCHED_ENTRIES = [
 
 // ── STATE ─────────────────────────────────────────────────────────────────
 let state = {
-  page:'dashboard', records:{}, ganttOffset:0, ganttArea:'',
+  page:'dashboard', records:{}, ganttOffset:(function(){
+    var t=new Date();var s=new Date(2026,4,21);
+    var diff=Math.round((new Date(t.getFullYear(),t.getMonth(),t.getDate())-new Date(s.getFullYear(),s.getMonth(),s.getDate()))/86400000);
+    return Math.max(0,diff-7);
+  })(), ganttArea:'',
   schedTab:'oneway', evidence:{}, reportDate: new Date(),
   schedTasks: Object.fromEntries(Object.entries(SCHED_DATA).map(([k,v])=>[k,v.tasks.map(t=>({...t}))])),
 };
