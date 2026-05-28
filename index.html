@@ -2072,7 +2072,7 @@ function openPhotoModal(sid,dateStr){
             showToast('📸 Foto guardada!');
             // Auto-save and return to map
             getModalRoot().innerHTML='';
-            if(state.page==='mapa')renderGantt(true);
+            navigate('mapa');
           };reader.readAsDataURL(file);
         });
       });
