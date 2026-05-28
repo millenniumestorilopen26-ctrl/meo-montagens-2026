@@ -2325,7 +2325,13 @@ function _renderUtilizadoresInner(){
     try{
       const allRecs = await fbGet('records');
       if(!allRecs){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
-      const days = Object.keys(allRecs).sort();
+      // Group keys by date (keys like "7cores_2026-05-25")
+      const dateMap = {};
+      Object.keys(allRecs).forEach(k=>{
+        const m = k.match(/(\d{4}-\d{2}-\d{2})$/);
+        if(m){if(!dateMap[m[1]])dateMap[m[1]]=0;dateMap[m[1]]++;}
+      });
+      const days = Object.keys(dateMap).sort();
       if(!days.length){showToast('Não há registos para apagar.');crBtn.disabled=false;crBtn.innerHTML='<i class="ti ti-trash"></i>Limpar registos por dia';return;}
 
       // Show modal with checkboxes per day
@@ -2339,10 +2345,12 @@ function _renderUtilizadoresInner(){
       const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
       const DPS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
       
+      const MESES2=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const DPS2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
       const dayRows = days.map(d=>{
         const dt = new Date(d+'T12:00:00');
-        const nRecs = Object.keys(allRecs[d]||{}).length;
-        const label = DPS[dt.getDay()]+' '+String(dt.getDate()).padStart(2,'0')+' '+MESES[dt.getMonth()];
+        const nRecs = dateMap[d]||0;
+        const label = DPS2[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+' '+MESES2[dt.getMonth()]+' '+dt.getFullYear();
         return '<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.1);margin-bottom:6px;transition:.15s" >'+
           '<input type="checkbox" value="'+d+'" style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer">'+
           '<span style="flex:1;font-size:13px;font-weight:700">'+label+'</span>'+
@@ -2382,9 +2390,14 @@ function _renderUtilizadoresInner(){
         let ok=0,err=0;
         for(const d of selected){
           try{
-            await fbSet('records/'+d, null);
-            // Clear from local cache
-            Object.keys(_recCache).filter(k=>k.includes(d.replace(/-/g,''))||k.split('__')[1]===d).forEach(k=>delete _recCache[k]);
+            // Delete all supplier records for this date
+            const keysForDate = Object.keys(allRecs).filter(k=>k.endsWith(d));
+            for(const k of keysForDate){
+              await fbSet('records/'+k, null);
+            }
+            // Clear local cache for this date
+            const cacheKey = d; // YYYY-MM-DD
+            Object.keys(_recCache).forEach(k=>{if(k.includes(cacheKey))delete _recCache[k];});
             ok++;
           }catch(e){err++;}
         }
