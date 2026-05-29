@@ -1717,8 +1717,10 @@ function renderGantt(skipCenter){
       const r=getRec(sup.id,d);const schedActs=getSchedAct(sup.id,d);const act=r.act||schedActs||'';
       if(isAdmin()){
         return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" style="padding:2px;vertical-align:top">'+
-          '<textarea class="g-act-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" placeholder="—" '+
-          'style="width:100%;box-sizing:border-box;font-size:9px;padding:3px 4px;border:1px solid '+(act?'var(--yellow)':'var(--border)')+';border-radius:3px;background:'+(act?'var(--yellow-l)':'#fff')+';color:var(--text);font-family:inherit;resize:none;height:72px;line-height:1.4;overflow-y:auto">'+act.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'+
+          (schedActs?schedActs.split('\n').filter(Boolean).map(t=>'<div style="font-size:9px;border-left:2px solid var(--yellow);padding:2px 5px;margin-bottom:2px;background:rgba(200,164,0,.1);border-radius:2px;line-height:1.35">'+t+'</div>').join(''):'')+
+          '<textarea class="g-act-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" placeholder="Nota..." '+
+          'style="width:100%;box-sizing:border-box;font-size:9px;padding:2px 4px;border:1px solid '+(r.act?'var(--yellow)':'var(--border)')+';border-radius:3px;background:'+(r.act?'var(--yellow-l)':'transparent')+';color:var(--text);font-family:inherit;resize:none;height:30px;line-height:1.4">'+
+          (r.act||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'+
           '</td>';
       }
       const badge=zoneBadge(act);
