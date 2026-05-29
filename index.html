@@ -2907,7 +2907,18 @@ function _renderUtilizadoresInner(){
     '</div></div>';
   pgEl.appendChild(toolsDiv);
 
-  const crBtn = document.getElementById('clear-records-btn');
+  const crBtn = document.getElementById(const resetBtn=document.getElementById('reset-all-btn');
+  if(resetBtn)resetBtn.addEventListener('click',async()=>{
+    if(!confirm('\u26a0\ufe0f RESET TOTAL\n\nApaga TODOS os registos (operações, assiduidade, fotos, observações).\nFornecedores e cronograma ficam intactos.\n\nConfirmas?'))return;
+    resetBtn.disabled=true;resetBtn.textContent='A limpar...';
+    try{await fbSet('records',null);}catch(e){}
+    _recCache={};
+    Object.keys(localStorage).filter(k=>k.startsWith('meo_')).forEach(k=>localStorage.removeItem(k));
+    resetBtn.disabled=false;resetBtn.innerHTML='<i class="ti ti-refresh-alert"></i> RESET TOTAL';
+    showToast('\u2705 Reset completo!');
+    renderDash();if(state.page==='mapa')renderGantt(true);if(state.page==='registo')renderReg();
+  });
+  'clear-records-btn');
   if(crBtn) crBtn.addEventListener('click', async()=>{
     // Load all records from Firebase to see which days exist
     crBtn.disabled=true; crBtn.textContent='A carregar dias...';
