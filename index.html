@@ -1568,9 +1568,9 @@ function renderCronos(){
 // ── ZONAS ─────────────────────────────────────────────────────────────────
 function renderZonas(){
   document.getElementById('zone-grid').innerHTML=ZONES.map(z=>
-    '<div class="zcard" onclick="zoneClick(\''+z.code+'\',\''+z.name+'\',\''+z.color+'\')" style="cursor:pointer">'+
-    '<div class="zcode" style="color:'+z.color+'">'+z.code+'</div>'+
-    '<div style="font-size:12px;font-weight:600;color:var(--text)">'+z.name+'</div></div>'
+    '<div class="zcard" onclick="zoneClick(\''+z.code+'\',\''+z.name+'\',\''+z.color+'\')" style="cursor:pointer;background:'+z.color+';border-color:'+z.color+'">'+
+    '<div class="zcode" style="color:rgba(255,255,255,0.8)">'+z.code+'</div>'+
+    '<div style="font-size:12px;font-weight:700;color:#fff">'+z.name+'</div></div>'
   ).join('');
   const cl=document.getElementById('contacts-list');
   if(cl)cl.innerHTML=CONTACTS.filter(c=>c.cat==='Coordenação'||c.cat==='Gestão de Áreas').map(c=>
