@@ -946,11 +946,11 @@ const ALERTS = [
 ];
 
 const SCHED_DATA = {
-  cmc:{label:'CMC',tasks:[
+  'cmc':{label:'CMC',tasks:[
     {id:1,task:'Pedido de baias baixas',zone:'',start:'20 Mai',end:'20 Mai',prog:0,notes:''},
     {id:14,task:'Entrega de baias baixas',zone:'',start:'30 Mai',end:'30 Mai',prog:0,notes:''},
   ]},
-  tlove:{label:'3Love',tasks:[
+  'tlove':{label:'3Love',tasks:[
     {id:2,task:'Low Pré-evento',zone:'',start:'25 Mai',end:'28 Jun',prog:0,notes:''},
     {id:3,task:'Início de montagens',zone:'CTE',start:'25 Mai',end:'31 Ago',prog:0,notes:''},
     {id:23,task:'Condicionamento varanda sala de sócios',zone:'',start:'1 Jun',end:'15 Ago',prog:0,notes:''},
@@ -968,7 +968,7 @@ const SCHED_DATA = {
     {id:240,task:'Medium Pós-evento',zone:'',start:'1 Ago',end:'6 Ago',prog:0,notes:''},
     {id:241,task:'Low Pós-evento',zone:'',start:'7 Ago',end:'31 Ago',prog:0,notes:''},
   ]},
-  7cores:{label:'7Cores',tasks:[
+  '7cores':{label:'7Cores',tasks:[
     {id:4,task:'Manutenção e desmontagens CTE',zone:'CTE',start:'25 Mai',end:'31 Ago',prog:0,notes:''},
     {id:5,task:'Derrubar muros de terreno externo',zone:'Terreno externo',start:'25 Mai',end:'26 Mai',prog:0,notes:''},
     {id:10,task:'Desmontagem de redes e lonas de fundo',zone:'Court Geza Torok',start:'27 Mai',end:'27 Mai',prog:0,notes:''},
@@ -998,7 +998,7 @@ const SCHED_DATA = {
     {id:160,task:'Colocação de Relva',zone:'',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
     {id:196,task:'Colocação de Relva',zone:'Courts A+B',start:'14 Jul',end:'29 Jul',prog:0,notes:''},
   ]},
-  mbw:{label:'MBW',tasks:[
+  'mbw':{label:'MBW',tasks:[
     {id:6,task:'Montagem de bancada',zone:'Court Cascais',start:'25 Mai',end:'30 Mai',prog:0,notes:''},
     {id:7,task:'WC Staff M/F',zone:'Módulos',start:'25 Mai',end:'31 Ago',prog:0,notes:''},
     {id:9,task:'Descarga de material (Zona de Stock)',zone:'COZINHA',start:'25 Mai',end:'26 Mai',prog:0,notes:''},
@@ -1068,7 +1068,7 @@ const SCHED_DATA = {
     {id:180,task:'WC FEMININOS',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
     {id:181,task:'IMG ARENA',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
   ]},
-  powershield:{label:'PowerShield',tasks:[
+  'powershield':{label:'PowerShield',tasks:[
     {id:8,task:'P1 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA)',zone:'Entrada TV Compound',start:'25 Mai',end:'15 Ago',prog:0,notes:''},
     {id:15,task:'P3',zone:'Rotunda',start:'31 Mai',end:'1 Jun',prog:0,notes:''},
     {id:28,task:'P2 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA)',zone:'Entrada Portão',start:'1 Jun',end:'15 Ago',prog:0,notes:''},
@@ -1112,7 +1112,7 @@ const SCHED_DATA = {
     {id:229,task:'P39',zone:'Estacionamento Parque 1',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
     {id:230,task:'P40',zone:'Autodromo',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
   ]},
-  irmarfer:{label:'Irmarfer',tasks:[
+  'irmarfer':{label:'Irmarfer',tasks:[
     {id:19,task:'Estaleiro Irmarfer',zone:'Pickleball/Parque A',start:'1 Jun',end:'23 Ago',prog:0,notes:''},
     {id:27,task:'TELA PROTECÇÃO PISCINA',zone:'',start:'1 Jun',end:'1 Jun',prog:0,notes:''},
     {id:30,task:'ESTRADO 25X45',zone:'',start:'2 Jun',end:'5 Jun',prog:0,notes:''},
@@ -1169,7 +1169,7 @@ const SCHED_DATA = {
     {id:163,task:'TENDA MS 10X5',zone:'',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
     {id:164,task:'ALCATIFA 10X5',zone:'',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
   ]},
-  oneway:{label:'Oneway',tasks:[
+  'oneway':{label:'Oneway',tasks:[
     {id:36,task:'Visita técnica ao espaço',zone:'Visita',start:'5 Jun',end:'5 Jun',prog:0,notes:''},
     {id:41,task:'Passagem de Guias para cabos',zone:'Montagem',start:'8 Jun',end:'12 Jun',prog:0,notes:''},
     {id:142,task:'Montagem Estruturas Truss',zone:'Montagem',start:'8 Jul',end:'9 Jul',prog:0,notes:''},
@@ -1195,16 +1195,16 @@ const SCHED_DATA = {
     {id:237,task:'Desmontagem Kids Club',zone:'Desmontagem',start:'26 Jul',end:'27 Jul',prog:0,notes:''},
     {id:239,task:'Desmontagens Court Central',zone:'Desmontagem',start:'27 Jul',end:'28 Jul',prog:0,notes:''},
   ]},
-  moove:{label:'Moove/Festa Aluga',tasks:[
+  'moove':{label:'Moove/Festa Aluga',tasks:[
     {id:109,task:'Condicionamento piso -1',zone:'Sala de bridge',start:'6 Jul',end:'31 Jul',prog:0,notes:''},
     {id:110,task:'Condicionamento piso -1',zone:'Sala de sócios',start:'6 Jul',end:'31 Jul',prog:0,notes:''},
     {id:168,task:'Condicionamento piso -2',zone:'Ginásio',start:'13 Jul',end:'29 Jul',prog:0,notes:''},
   ]},
-  niu:{label:'NIU',tasks:[
+  'niu':{label:'NIU',tasks:[
     {id:111,task:'Estruturas Courts Cobertos',zone:'Fun Center',start:'6 Jul',end:'16 Jul',prog:0,notes:''},
     {id:146,task:'Montagem stand Porsche',zone:'Smash Area',start:'9 Jul',end:'17 Jul',prog:0,notes:''},
   ]},
-  mactecnica:{label:'Mactecnica',tasks:[
+  'mactecnica':{label:'Mactecnica',tasks:[
     {id:201,task:'Mactecnica',zone:'',start:'14 Jul',end:'',prog:0,notes:''},
   ]},
 };
