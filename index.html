@@ -1666,6 +1666,18 @@ function centerOnToday(){
   state.ganttOffset=0;
   renderGantt(true);
 }
+function getSchedAct(sid, d){
+  // Returns scheduled activity from SCHED_ENTRIES for a given supplier and date
+  const ds = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  for(const e of SCHED_ENTRIES){
+    if(e.sid !== sid) continue;
+    const s = new Date(e.s[0], e.s[1], e.s[2]).getTime();
+    const en = new Date(e.e[0], e.e[1], e.e[2]).getTime();
+    if(ds >= s && ds <= en) return e.act||'';
+  }
+  return '';
+}
+
 function renderGantt(skipCenter){
   const days=getViewDays();
   const areas=[...new Set(SUPS.map(s=>s.area))];
@@ -1685,7 +1697,7 @@ function renderGantt(skipCenter){
     }).join('')+'</tr>';
     // Activity row - inline editable for admins
     html+='<tr class="g-data"><td class="g-sup-td" style="font-size:10px;color:var(--text3);padding:2px 11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px">Operação</td>'+days.map(d=>{
-      const r=getRec(sup.id,d);const act=r.act||'';
+      const r=getRec(sup.id,d);const act=r.act||getSchedAct(sup.id,d)||'';
       if(isAdmin()){
         return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" style="padding:2px;vertical-align:top">'+
           '<textarea class="g-act-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" placeholder="—" '+
