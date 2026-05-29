@@ -1873,7 +1873,6 @@ function renderReg(){
       '<div style="margin-bottom:11px"><label class="flbl">Assiduidade</label><div class="pills">'+
       ['presente','parcial','ausente'].map(v=>'<span class="pill'+(r.att===v?' p-'+v.slice(0,3):'')+'" data-sid="'+sup.id+'" data-att="'+v+'">'+v.charAt(0).toUpperCase()+v.slice(1)+'</span>').join('')+
       '</div></div>'+
-      '<div class="fr2"><div><label class="flbl">Progresso: <strong id="pv-'+sup.id+'">'+r.prog+'%</strong></label><div class="rw"><input type="range" min="0" max="100" step="5" value="'+r.prog+'" data-sid="'+sup.id+'" class="prng"></div></div>'+
       (function(){
         var tasks=getSchedAct(sup.id,TODAY).split('\n').filter(Boolean);
         var progs=r.taskProgs||{};
