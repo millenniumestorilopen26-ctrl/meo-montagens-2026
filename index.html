@@ -1663,7 +1663,12 @@ function getViewDays(){
 }
 
 function centerOnToday(){
-  state.ganttOffset=0;
+  const t=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
+  const s=new Date(START.getFullYear(),START.getMonth(),START.getDate());
+  const todayIdx=Math.round((t-s)/86400000);
+  const w=window.innerWidth;
+  const count=w<900?3:6;
+  state.ganttOffset=Math.max(0,todayIdx-Math.floor(count/2));
   renderGantt(true);
 }
 function getSchedAct(sid, d){
