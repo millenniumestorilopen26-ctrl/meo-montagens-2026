@@ -1679,11 +1679,8 @@ function getViewDays(){
 }
 
 function centerOnToday(){
-  const t=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
-  const s=new Date(START.getFullYear(),START.getMonth(),START.getDate());
-  const todayIdx=Math.round((t-s)/86400000);
-  const count=window.innerWidth<900?3:6;
-  state.ganttOffset=Math.max(0,todayIdx-Math.floor(count/2));
+  // ganttOffset=0 means TODAY is centred (getViewDays builds from TODAY+offset)
+  state.ganttOffset=0;
 }
 function getSchedAct(sid, d){
   // Returns scheduled activity from SCHED_ENTRIES for a given supplier and date
