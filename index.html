@@ -2907,9 +2907,9 @@ function _renderUtilizadoresInner(){
     '</div></div>';
   pgEl.appendChild(toolsDiv);
 
-  const crBtn = document.getElementById(const resetBtn=document.getElementById('reset-all-btn');
+  const resetBtn=document.getElementById('reset-all-btn');
   if(resetBtn)resetBtn.addEventListener('click',async()=>{
-    if(!confirm('\u26a0\ufe0f RESET TOTAL\n\nApaga TODOS os registos (operações, assiduidade, fotos, observações).\nFornecedores e cronograma ficam intactos.\n\nConfirmas?'))return;
+    if(!confirm('\u26a0\ufe0f RESET TOTAL\n\nApaga TODOS os registos diários.\nFornecedores e cronograma ficam intactos.\n\nConfirmas?'))return;
     resetBtn.disabled=true;resetBtn.textContent='A limpar...';
     try{await fbSet('records',null);}catch(e){}
     _recCache={};
