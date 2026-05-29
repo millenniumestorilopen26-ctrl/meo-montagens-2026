@@ -1874,7 +1874,26 @@ function renderReg(){
       ['presente','parcial','ausente'].map(v=>'<span class="pill'+(r.att===v?' p-'+v.slice(0,3):'')+'" data-sid="'+sup.id+'" data-att="'+v+'">'+v.charAt(0).toUpperCase()+v.slice(1)+'</span>').join('')+
       '</div></div>'+
       '<div class="fr2"><div><label class="flbl">Progresso: <strong id="pv-'+sup.id+'">'+r.prog+'%</strong></label><div class="rw"><input type="range" min="0" max="100" step="5" value="'+r.prog+'" data-sid="'+sup.id+'" class="prng"></div></div>'+
-      (function(){var tasks=getSchedAct(sup.id,TODAY).split('\n').filter(Boolean);var tasksHtml=tasks.length>0?'<div style="margin-bottom:8px"><label class="flbl">Tarefas programadas</label>'+tasks.map(function(t,i){return'<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:3px;background:#fffbea;border-left:3px solid '+sup.color+';border-radius:4px;font-size:12px;font-weight:600;color:#333">'+(tasks.length>1?'<span style="color:'+sup.color+';font-weight:800;min-width:16px">'+(i+1)+'.</span>':'')+t+'</div>';}).join('')+'</div>':'';return tasksHtml+'<div><label class="flbl">Actividade</label><input class="finp ainp" placeholder="Actividade realizada..." data-sid="'+sup.id+'" value="'+(r.act||'')+'"></div></div>';})()+
+      (function(){
+        var tasks=getSchedAct(sup.id,TODAY).split('\n').filter(Boolean);
+        var progs=r.taskProgs||{};
+        if(tasks.length===0){
+          return '<div class="fr2"><div><label class="flbl">Progresso: <strong id="pv-'+sup.id+'">'+r.prog+'%</strong></label>'+
+          '<input type="range" class="prng" min="0" max="100" step="5" value="'+r.prog+'" data-sid="'+sup.id+'">'+
+          '<div class="pbar"><div class="pbar-fill" style="width:'+r.prog+'%"></div></div></div>'+
+          '<div><label class="flbl">Actividade</label><input class="finp ainp" placeholder="Actividade realizada..." data-sid="'+sup.id+'" value="'+(r.act||'')+'"></div></div>';
+        }
+        return '<div style="margin-bottom:8px"><label class="flbl">Tarefas e Progresso</label>'+
+        tasks.map(function(t,i){
+          var p=progs[i]||0;
+          return '<div style="padding:8px 10px;margin-bottom:6px;background:#fffbea;border-left:3px solid '+sup.color+';border-radius:6px">'+
+          '<div style="font-size:11px;font-weight:700;color:#333;margin-bottom:6px">'+(tasks.length>1?'<span style="color:'+sup.color+'">'+(i+1)+'. </span>':'')+t+'</div>'+
+          '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span style="font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap">'+p+'%</span>'+
+          '<input type="range" class="prng task-prng" min="0" max="100" step="5" value="'+p+'" data-sid="'+sup.id+'" data-ti="'+i+'" style="flex:1">'+
+          '</div></div>';
+        }).join('')+'</div><div><label class="flbl">Observações gerais</label>';
+      })()+
       '<div style="margin-bottom:11px"><label class="flbl">Observações</label><textarea class="fta oinp" placeholder="Notas, problemas..." data-sid="'+sup.id+'">'+(r.obs||'')+'</textarea></div>'+
       '<div><label class="flbl">Evidências ('+(r.photos||[]).length+')</label>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
