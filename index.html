@@ -89,7 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .tbadge{font-size:11px;padding:5px 12px;border-radius:99px;font-weight:700;white-space:nowrap}
 .tbadge.red{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
 .tbadge.gold{background:var(--yellow);color:var(--dark);font-weight:900}
-.content{flex:1;padding:20px 22px 28px}
+.content{flex:1;padding:20px 22px 28px;overflow-y:auto;height:calc(100vh - var(--top-h))}
 
 /* ── BOTTOM NAV ──────────────────────────────────── */
 .botnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:2px solid var(--yellow);z-index:50;height:var(--bot-h);box-shadow:0 -4px 20px rgba(0,0,0,.3)}
@@ -156,7 +156,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
   .g-day-td{font-size:9px;height:auto!important;overflow:visible!important}
   .g-ph-btn{font-size:10px!important;padding:2px 3px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
 }
-.gt thead{position:sticky;top:calc(var(--top-h) + 52px);z-index:20}.gt th{background:var(--dark);color:rgba(255,255,255,.78);font-size:10px;font-weight:800;padding:9px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;min-width:95px;position:sticky;top:0;z-index:3;text-transform:uppercase;letter-spacing:.3px}
+.gt thead tr th{position:sticky;top:0;z-index:10;}.gt th{background:var(--dark);color:rgba(255,255,255,.78);font-size:10px;font-weight:800;padding:9px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;min-width:95px;position:sticky;top:0;z-index:3;text-transform:uppercase;letter-spacing:.3px}
 .gt th.sup-th{min-width:100px;max-width:120px;text-align:left;padding-left:13px;position:sticky;left:0;z-index:4;background:var(--dark)}
 .gt th.wknd-th{background:var(--dark3);color:rgba(255,255,255,.3)}
 .gt th.today-th{background:var(--yellow);color:var(--dark);font-weight:900}
