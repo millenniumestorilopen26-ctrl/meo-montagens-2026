@@ -3506,17 +3506,5 @@ if(authCheckSession()){
 }
 
 
-// ── NAVIGATE UPDATE FOR UTILIZADORES ─────────────────────────────────────
-// Utilizadores nav binding
-document.querySelectorAll('[data-pg="utilizadores"]').forEach(b=>b.addEventListener('click',()=>navigate('utilizadores')));
-
-// ── AUTO-LOGIN CHECK ──────────────────────────────────────────────────────
-if(authCheckSession()){
-  launchApp();
-} else {
-  document.getElementById('auth-screen').style.display='flex';
-}
-
-
 </script>
 </html>
