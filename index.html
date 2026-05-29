@@ -89,7 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .tbadge{font-size:11px;padding:5px 12px;border-radius:99px;font-weight:700;white-space:nowrap}
 .tbadge.red{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
 .tbadge.gold{background:var(--yellow);color:var(--dark);font-weight:900}
-.content{flex:1;padding:20px 22px 28px;}
+.content{flex:1;padding:20px 22px 28px}
 
 /* ── BOTTOM NAV ──────────────────────────────────── */
 .botnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:2px solid var(--yellow);z-index:50;height:var(--bot-h);box-shadow:0 -4px 20px rgba(0,0,0,.3)}
@@ -99,7 +99,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .bn-btn i{font-size:20px}
 
 /* ── PAGES ───────────────────────────────────────── */
-.pg{display:none}.pg.on{display:block}#pg-mapa.on{display:flex;flex-direction:column;height:calc(100vh - var(--top-h));}
+.pg{display:none}.pg.on{display:block}
 
 /* ── KPI ─────────────────────────────────────────── */
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
@@ -138,15 +138,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .ph-line{width:2px;flex:1;background:#e8e8e8;margin-top:4px;min-height:14px}
 
 /* ── GANTT ───────────────────────────────────────── */
-.gc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  position:fixed;top:var(--top-h);left:var(--nav-w);right:0;z-index:40;
-  background:var(--bg);padding:8px 22px;border-bottom:1px solid var(--border);
-  box-shadow:0 2px 8px rgba(0,0,0,.08);}
-.gc-spacer{height:56px;}@media(max-width:899px){.gc{left:0;padding:8px 12px;}}
+.gc{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .gbtn{padding:7px 13px;border:2px solid var(--dark);border-radius:var(--r);background:var(--white);cursor:pointer;font-size:12px;color:var(--dark);font-family:inherit;font-weight:800;transition:all .15s;text-transform:uppercase;letter-spacing:.3px}
 .gbtn:hover{background:var(--yellow);border-color:var(--yellow)}
 .gsel{padding:7px 10px;border:2px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text);background:var(--white);font-family:inherit;font-weight:700}
-.gwrap{overflow:auto;border-radius:var(--r);border:2px solid var(--dark);box-shadow:var(--sh);flex:1;}
+.gwrap{overflow-x:auto;border-radius:var(--r);border:2px solid var(--dark);box-shadow:var(--sh)}
 .gt{border-collapse:collapse;width:max-content}
 @media(max-width:899px){
   .gwrap{overflow-x:hidden}
@@ -156,7 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
   .g-day-td{font-size:9px;height:auto!important;overflow:visible!important}
   .g-ph-btn{font-size:10px!important;padding:2px 3px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
 }
-.gt thead tr th{position:sticky;top:0;z-index:10;}.gt th{background:var(--dark);color:rgba(255,255,255,.78);font-size:10px;font-weight:800;padding:9px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;min-width:95px;position:sticky;top:0;z-index:3;text-transform:uppercase;letter-spacing:.3px}
+.gt th{background:var(--dark);color:rgba(255,255,255,.78);font-size:10px;font-weight:800;padding:9px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;min-width:95px;position:sticky;top:0;z-index:3;text-transform:uppercase;letter-spacing:.3px}
 .gt th.sup-th{min-width:100px;max-width:120px;text-align:left;padding-left:13px;position:sticky;left:0;z-index:4;background:var(--dark)}
 .gt th.wknd-th{background:var(--dark3);color:rgba(255,255,255,.3)}
 .gt th.today-th{background:var(--yellow);color:var(--dark);font-weight:900}
@@ -389,8 +385,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
   <div class="content">
     <div class="pg on" id="pg-dashboard"></div>
     <div class="pg" id="pg-mapa">
-      <div class="gc-spacer"></div><div class="gc">
+      <div class="gc">
         <button class="gbtn" id="g-prev"><i class="ti ti-chevron-left"></i></button>
+        <button class="gbtn" id="g-today" style="font-size:11px;font-weight:800;padding:4px 10px;background:var(--yellow);color:#000;border-color:var(--yellow)">HOJE</button>
         <span id="g-range" style="font-size:12px;color:var(--text2)"></span>
         <button class="gbtn" id="g-next"><i class="ti ti-chevron-right"></i></button>
         <select class="gsel" id="g-area"><option value="">Todas as áreas</option></select>
@@ -861,20 +858,24 @@ const MSHT  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov'
 const MLONG = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
 const SUPS = [
-  {id:'mbw',           name:'MBW',              area:'Estruturas',    color:'#3b82f6', active:true},
-  {id:'powershield',   name:'PowerShield',      area:'Segurança',     color:'#f59e0b', active:true},
-  {id:'irmarfer',      name:'Irmarfer',         area:'Estruturas',    color:'#8b5cf6', active:true},
-  {id:'7cores',        name:'7Cores',           area:'Manutenção',    color:'#ef4444', active:true},
-  {id:'oneway',        name:'One WAY',          area:'AV/Técnico',    color:'#06b6d4', active:true},
-  {id:'tlove',         name:'3Love',            area:'Coordenação',   color:'#dc2626', active:true},
-  {id:'niu',           name:'NIU',              area:'Coordenação',   color:'#FFEC1A', active:true},
-  {id:'cmc',           name:'CMC',              area:'Equipamentos',  color:'#a16207', active:true},
-  {id:'moove',         name:'Moove/Festa Aluga',area:'Logística',     color:'#34d399', active:true},
-  {id:'festaaluga',    name:'Festa Aluga/H.Luz',area:'Decoração',     color:'#f472b6', active:true},
-  {id:'mactecnica',    name:'Mactecnica',       area:'Técnico',       color:'#7c3aed', active:true},
-  {id:'metalcario',    name:'MetalCario',       area:'Estruturas',    color:'#0369a1', active:true},
-  {id:'innowave',      name:'Innowave',         area:'Tecnologia',    color:'#10b981', active:true},
-  {id:'cores_irmarfer',name:'7Cores/Irmarfer',  area:'Manutenção',    color:'#f97316', active:true},
+  {id:'7cores',   name:'7Cores',          area:'Manutenção',   color:'#ef4444', active:true},
+  {id:'mbw',      name:'MBW',             area:'Estruturas',   color:'#3b82f6', active:true},
+  {id:'irmarfer', name:'Irmarfer',        area:'Estruturas',   color:'#8b5cf6', active:true},
+  {id:'oneway',   name:'Oneway',          area:'AV/Técnico',   color:'#f59e0b', active:true},
+  {id:'meo',      name:'MEO',             area:'Rede/Wi-Fi',   color:'#10b981', active:true},
+  {id:'simpleway',name:'Simpleway',       area:'Energia',      color:'#06b6d4', active:true},
+  {id:'helder',   name:'Hélder Branco',   area:'Canalização',  color:'#f97316', active:true},
+  {id:'ruigrilo', name:'Rui Grilo',       area:'Arquitetura',  color:'#ec4899', active:true},
+  {id:'andre',    name:'André Paiva',     area:'Telecom',      color:'#84cc16', active:true},
+  {id:'mac',      name:'MAC Técnica',     area:'TV Interna',   color:'#fb923c', active:true},
+  {id:'moove',    name:'Moove',           area:'Logística',    color:'#34d399', active:true},
+  {id:'festa',    name:'Festa Aluga',     area:'Decoração',    color:'#f472b6', active:false},
+  {id:'power',    name:'PowerShield',     area:'Segurança',    color:'#fbbf24', active:true},
+  {id:'perimetro',name:'Perimetro Final', area:'Limpeza',      color:'#60a5fa', active:false},
+  {id:'sportradar',name:'Sportradar',     area:'Broadcast',    color:'#a78bfa', active:false},
+  {id:'bolt6',    name:'Bolt6',           area:'Broadcast',    color:'#4ade80', active:false},
+  {id:'emav',     name:'EMAV',            area:'TV/Broadcast', color:'#f87171', active:false},
+  {id:'niu',      name:'NIU Produção',    area:'Coordenação',  color:'#FFEC1A', active:true},
 ];
 
 const ZONES = [
@@ -946,277 +947,42 @@ const ALERTS = [
 ];
 
 const SCHED_DATA = {
-  'innowave':{label:'Innowave',tasks:[
-    {id:1,task:'Parecer da Innowave ao nosso prompt e timings plataforma',zone:'',start:'25 Fev',end:'3 Mar',prog:0,notes:''},
-    {id:3,task:'Desenvolvimento da plataforma',zone:'',start:'16 Mar',end:'2 Abr',prog:0,notes:''},
-    {id:4,task:'Apresentação do backend da plataforma à 3Love',zone:'',start:'3 Abr',end:'3 Abr',prog:0,notes:''},
-  ]},
-  'tlove':{label:'3Love',tasks:[
-    {id:2,task:'Negociação comercial Innowave/M EO',zone:'',start:'3 Mar',end:'16 Mar',prog:0,notes:''},
-    {id:5,task:'Discussão, Inputs e Análise de backend de plataforma',zone:'',start:'3 Abr',end:'8 Abr',prog:0,notes:''},
-    {id:7,task:'Low Pré-evento',zone:'',start:'25 Mai',end:'28 Jun',prog:0,notes:''},
-    {id:8,task:'Início de montagens',zone:'CTE',start:'25 Mai',end:'31 Ago',prog:0,notes:''},
-    {id:28,task:'Condicionamento varanda sala de sócios',zone:'',start:'1 Jun',end:'15 Ago',prog:0,notes:''},
-    {id:91,task:'Medium Pré-evento',zone:'',start:'29 Jun',end:'11 Jul',prog:0,notes:''},
-    {id:122,task:'Court de jogo',zone:'Court 3/CTE',start:'8 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:166,task:'Condicionamento piso -2',zone:'Pilates',start:'10 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:170,task:'High Pré-evento',zone:'',start:'11 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:171,task:'Condicionamento piso -2',zone:'Balneários',start:'11 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:172,task:'Condicionamento piso 0',zone:'Recepção',start:'11 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:202,task:'Utilização de court para treinos players',zone:'Court 5',start:'14 Jul',end:'29 Jul',prog:0,notes:''},
-    {id:203,task:'Utilização de court para treinos players',zone:'Court 6',start:'14 Jul',end:'29 Jul',prog:0,notes:''},
-    {id:204,task:'Utilização de court para treinos players',zone:'Court 1',start:'14 Jul',end:'29 Jul',prog:0,notes:''},
-    {id:205,task:'Utilização de court para treinos players',zone:'Court 2',start:'14 Jul',end:'29 Jul',prog:0,notes:''},
-    {id:243,task:'High Pós-evento',zone:'',start:'27 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:245,task:'Medium Pós-evento',zone:'',start:'1 Ago',end:'6 Ago',prog:0,notes:''},
-    {id:246,task:'Low Pós-evento',zone:'',start:'7 Ago',end:'31 Ago',prog:0,notes:''},
-  ]},
-  'cmc':{label:'CMC',tasks:[
-    {id:6,task:'Pedido de baias baixas',zone:'',start:'20 Mai',end:'20 Mai',prog:0,notes:''},
-    {id:19,task:'Entrega de baias baixas',zone:'',start:'30 Mai',end:'30 Mai',prog:0,notes:''},
+  oneway:{label:'Oneway',tasks:[
+    {id:1,task:'Visita técnica',                    zone:'Slice e Slice Restaurant',start:'5 Jun', end:'5 Jun', prog:100,notes:'Concluído'},
+    {id:2,task:'Guias para cabos',                  zone:'Slice e Slice Restaurant',start:'8 Jun', end:'12 Jun',prog:0,  notes:''},
+    {id:3,task:'Truss + Iluminação + Som',          zone:'Estádio',           start:'8 Jul', end:'9 Jul', prog:0,  notes:''},
+    {id:4,task:'Montagem Som',                      zone:'Slice e Slice Restaurant', start:'11 Jul',end:'15 Jul',prog:0,  notes:''},
+    {id:5,task:'Montagem Luz Cénica',               zone:'Slice',                 start:'14 Jul',end:'15 Jul',prog:0,  notes:''},
+    {id:6,task:'Regie, Testes, Som Jogadores + ATP',zone:'Estádio',           start:'11 Jul',end:'15 Jul',prog:0,  notes:''},
+    {id:7,task:'Som e Regie Courts',                zone:'Players',           start:'11 Jul',end:'15 Jul',prog:0,  notes:''},
+    {id:8,task:'Montagem Sorteio',                  zone:'Slice',                 start:'17 Jul',end:'17 Jul',prog:0,  notes:''},
+    {id:9,task:'Luz Festas + Som Festas',           zone:'Slice',                 start:'20 Jul',end:'24 Jul',prog:0,  notes:''},
+    {id:10,task:'Desmontagens',                     zone:'Slice, Estádio',start:'27 Jul',end:'28 Jul',prog:0,notes:''},
   ]},
   '7cores':{label:'7Cores',tasks:[
-    {id:9,task:'Manutenção e desmontagens CTE',zone:'CTE',start:'25 Mai',end:'31 Ago',prog:0,notes:''},
-    {id:10,task:'Derrubar muros de terreno externo',zone:'Terreno externo',start:'25 Mai',end:'26 Mai',prog:0,notes:''},
-    {id:15,task:'Desmontagem de redes e lonas de fundo',zone:'Court Geza Torok',start:'27 Mai',end:'27 Mai',prog:0,notes:''},
-    {id:16,task:'Desmontagem de postes de iluminação e relva sintética pickleball',zone:'',start:'27 Mai',end:'29 Mai',prog:0,notes:''},
-    {id:17,task:'Colocação de redes de fundo de substituição',zone:'Court Geza Torok',start:'28 Mai',end:'28 Mai',prog:0,notes:''},
-    {id:18,task:'Recolha de plantas da varanda',zone:'Piscina',start:'29 Mai',end:'29 Mai',prog:0,notes:''},
-    {id:22,task:'Delimitação de obra com baias baixas',zone:'CTE',start:'1 Jun',end:'4 Jun',prog:0,notes:''},
-    {id:25,task:'Desmontagem de corrimãos e chuveiro piscina',zone:'',start:'1 Jun',end:'2 Jun',prog:0,notes:''},
-    {id:26,task:'Desmontagem de corrimãos varanda',zone:'Piscina',start:'1 Jun',end:'3 Jun',prog:0,notes:''},
-    {id:27,task:'Colocação de baias baixas na varanda',zone:'',start:'1 Jun',end:'3 Jun',prog:0,notes:''},
-    {id:34,task:'Desmontagem de pérgula',zone:'Passeio CTE',start:'2 Jun',end:'3 Jun',prog:0,notes:''},
-    {id:37,task:'Remoção de bancos e material envolvente do Estadio',zone:'',start:'3 Jun',end:'5 Jun',prog:0,notes:''},
-    {id:39,task:'Desmontagem de mini-tenis/bate bolas',zone:'',start:'4 Jun',end:'4 Jun',prog:0,notes:''},
-    {id:47,task:'COLOCAÇÃO DE ALCATIFA',zone:'Camarotes Lateral',start:'8 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:68,task:'COLOCAÇÃO DE ALCATIFA',zone:'Camarotes Lateral',start:'15 Jun',end:'16 Jun',prog:0,notes:''},
-    {id:71,task:'Colocação de Relva',zone:'Slice Lounge/Entrada Slice/Escritório Slice',start:'17 Jun',end:'20 Jun',prog:0,notes:''},
-    {id:78,task:'COLOCAÇÃO DE ALCATIFA',zone:'Camarotes Topo Norte',start:'22 Jun',end:'26 Jun',prog:0,notes:''},
-    {id:81,task:'Colocação de Relva',zone:'',start:'23 Jun',end:'24 Jun',prog:0,notes:''},
-    {id:88,task:'Colocação de Relva',zone:'Premium Bar até Wine Bar',start:'25 Jun',end:'26 Jun',prog:0,notes:''},
-    {id:90,task:'Colocação de Relva',zone:'Tenda Players',start:'26 Jun',end:'26 Jun',prog:0,notes:''},
-    {id:102,task:'Colocação de Relva',zone:'',start:'2 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:113,task:'Colocação de Relva',zone:'',start:'6 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:150,task:'COLOCAÇÃO DE ALCATIFA',zone:'Bancadas',start:'9 Jul',end:'10 Jul',prog:0,notes:''},
-    {id:164,task:'Colocação de Relva',zone:'Estrado bilheteira',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
-    {id:165,task:'Colocação de Relva',zone:'',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
-    {id:201,task:'Colocação de Relva',zone:'Courts A+B',start:'14 Jul',end:'29 Jul',prog:0,notes:''},
+    {id:1,task:'Retirada de vedações',   zone:'Recinto',              start:'21 Mai',end:'31 Mai',prog:30,notes:'Em curso'},
+    {id:2,task:'Reparações gerais',      zone:'Recinto',              start:'21 Mai',end:'10 Jul',prog:15,notes:''},
+    {id:3,task:'Preparação CTE',         zone:'Court CTE',       start:'25 Mai',end:'5 Jun', prog:10,notes:''},
+    {id:4,task:'Colocação de relva',     zone:'Recinto',              start:'1 Jun', end:'20 Jun',prog:0, notes:''},
+    {id:5,task:'Relva Slice',     zone:'Slice',         start:'5 Jun', end:'15 Jun',prog:0, notes:''},
+    {id:6,task:'Alcatifa camarotes',     zone:'Estádio',   start:'15 Jun',end:'1 Jul', prog:0, notes:''},
+    {id:7,task:'Alcatifa Estádio',       zone:'Estádio',   start:'1 Jul', end:'10 Jul',prog:0, notes:''},
   ]},
-  'mbw':{label:'MBW',tasks:[
-    {id:11,task:'Montagem de bancada',zone:'Court Cascais',start:'25 Mai',end:'30 Mai',prog:0,notes:''},
-    {id:12,task:'WC Staff M/F',zone:'Módulos',start:'25 Mai',end:'31 Ago',prog:0,notes:''},
-    {id:14,task:'Descarga de material (Zona de Stock)',zone:'COZINHA',start:'25 Mai',end:'26 Mai',prog:0,notes:''},
-    {id:21,task:'Montagem  e desmontagem de bancada',zone:'Court Geza Torok/Millennium',start:'1 Jun',end:'23 Ago',prog:0,notes:''},
-    {id:23,task:'Estaleiro MBW',zone:'Traseiras Court Cascais',start:'1 Jun',end:'21 Ago',prog:0,notes:''},
-    {id:29,task:'VIGILÂNCIA',zone:'Módulos',start:'1 Jun',end:'31 Ago',prog:0,notes:''},
-    {id:30,task:'SEGURANÇA/VALET',zone:'Módulos',start:'1 Jun',end:'31 Ago',prog:0,notes:''},
-    {id:31,task:'SALA MEETING ROOM',zone:'Módulos',start:'1 Jun',end:'1 Jun',prog:0,notes:''},
-    {id:38,task:'Bancada lateral Camarotes VIP (Poente)',zone:'Bancadas',start:'3 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:48,task:'LAVA COPOS',zone:'Módulos',start:'9 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:49,task:'ARRECADAÇÃO FLAMINGO BOÉMIO',zone:'Módulos',start:'9 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:50,task:'WC SLICE LOUNGE',zone:'Módulos',start:'9 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:51,task:'REGIE',zone:'Módulos',start:'9 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:55,task:'Condicionamento de passagem varanda restaurante',zone:'Restaurante',start:'10 Jun',end:'10 Ago',prog:0,notes:''},
-    {id:62,task:'Bancada Topo Camarotes (Norte)',zone:'Bancadas',start:'11 Jun',end:'23 Jun',prog:0,notes:''},
-    {id:77,task:'Canto',zone:'Bancadas',start:'22 Jun',end:'7 Jul',prog:0,notes:''},
-    {id:82,task:'WC SLICE RESTAURANT',zone:'Módulos',start:'25 Jun',end:'25 Jun',prog:0,notes:''},
-    {id:83,task:'SEGURANÇA',zone:'Módulos',start:'25 Jun',end:'25 Jun',prog:0,notes:''},
-    {id:84,task:'ESCRITÓRIO PRODUÇÃO',zone:'Módulos',start:'25 Jun',end:'25 Jun',prog:0,notes:''},
-    {id:85,task:'ARRECADAÇÃO BOLAS/TOALHAS',zone:'Módulos',start:'25 Jun',end:'25 Jun',prog:0,notes:''},
-    {id:99,task:'PREMIUM BAR',zone:'Módulos',start:'2 Jul',end:'2 Jul',prog:0,notes:''},
-    {id:106,task:'Módulo 4 arrecadações',zone:'Módulos',start:'3 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:107,task:'VESTIÁRIOS',zone:'Módulos',start:'3 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:108,task:'ARRECADAÇÃO PARCEIROS',zone:'Módulos',start:'3 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:119,task:'Bancada Topo Cadeira (Sul)',zone:'Bancadas',start:'6 Jul',end:'16 Jul',prog:0,notes:''},
-    {id:123,task:'Montagem e desmontagem de bancada',zone:'Court 4',start:'8 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:124,task:'Montagem Bancada',zone:'Court 7',start:'8 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:125,task:'STANDS',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:126,task:'STANDS',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:127,task:'CORREDOR STANDS (lado esquerdo smash area)',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:128,task:'STAND PEQUENO',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:129,task:'CORREDOR STANDS (lado direito smash area)',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:130,task:'STANDS',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:131,task:'BAR',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:132,task:'RFM',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:133,task:'SERVIÇOS MÉDICOS',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:134,task:'STAND H.LUZ COMERCIAL',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:135,task:'STAND ALTANO',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:136,task:'CTE',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:137,task:'PARCEIROS',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:138,task:'PARCEIROS',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:139,task:'POSTO DE COMANDO',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:140,task:'CCTV',zone:'Módulos',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:152,task:'LIMPEZA Perimetro Final',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:153,task:'ENERGIA',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:154,task:'MANUTENÇÃO DE CAMPO',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:155,task:'Canalização',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:156,task:'Limpeza CMC',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:157,task:'Copa Segurança',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:158,task:'BILHETEIRA/ACREDITAÇÃO',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:159,task:'BENGALEIRO',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:160,task:'VESTIÁRIOS',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:161,task:'COPA',zone:'Módulos',start:'9 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:163,task:'Court CTE',zone:'Bancadas',start:'9 Jul',end:'14 Jul',prog:0,notes:''},
-    {id:167,task:'FOOD CONTAINER',zone:'Módulos',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
-    {id:174,task:'SEGURANÇA',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:175,task:'VALET',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:176,task:'BOLT 6',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:177,task:'ATP',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:178,task:'MEO',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:179,task:'UCOM',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:180,task:'UCOM  CZ',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:181,task:'REGIE',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:182,task:'WC MOBILIDADE REDUZIDA',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:183,task:'WC EMERGENCIA',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:184,task:'WC MASCULINOS',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:185,task:'WC FEMININOS',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
-    {id:186,task:'IMG ARENA',zone:'Módulos',start:'13 Jul',end:'13 Jul',prog:0,notes:''},
+  mbw:{label:'MBW',tasks:[
+    {id:1,task:'Recepção módulos',       zone:'Warehouse Area',                        start:'1 Jun', end:'10 Jun',prog:0,notes:''},
+    {id:2,task:'Montagem courts treino', zone:'Players',               start:'1 Jun', end:'15 Jun',prog:0,notes:''},
+    {id:3,task:'Montagem camarotes',     zone:'Estádio',               start:'1 Jun', end:'30 Jun',prog:0,notes:''},
+    {id:4,task:'Montagem bancadas',      zone:'Estádio',               start:'5 Jun', end:'5 Jul', prog:0,notes:''},
+    {id:5,task:'Court Cascais + CT/CTE', zone:'Court Cascais e Court CTE',  start:'10 Jun',end:'30 Jun',prog:0,notes:''},
+    {id:6,task:'Desmontagem',            zone:'Recinto',                          start:'27 Jul',end:'31 Ago',prog:0,notes:''},
   ]},
-  'powershield':{label:'PowerShield',tasks:[
-    {id:13,task:'P1 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA)',zone:'Entrada TV Compound',start:'25 Mai',end:'15 Ago',prog:0,notes:''},
-    {id:20,task:'P3',zone:'Rotunda',start:'31 Mai',end:'1 Jun',prog:0,notes:''},
-    {id:33,task:'P2 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA)',zone:'Entrada Portão',start:'1 Jun',end:'15 Ago',prog:0,notes:''},
-    {id:40,task:'P4',zone:'Terreno Cozinha/Muros',start:'5 Jun',end:'10 Ago',prog:0,notes:''},
-    {id:42,task:'P3',zone:'Rotunda',start:'7 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:65,task:'P3',zone:'Rotunda',start:'14 Jun',end:'15 Ago',prog:0,notes:''},
-    {id:105,task:'P5',zone:'Saída FoodCourt',start:'2 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:112,task:'P10',zone:'Saída Emergência Topo',start:'4 Jul',end:'31 Ago',prog:0,notes:''},
-    {id:145,task:'P6',zone:'Posto de Segurança',start:'8 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:146,task:'P38',zone:'Entrada Recinto',start:'8 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:187,task:'P7',zone:'Armazem Geral',start:'13 Jul',end:'28 Jul',prog:0,notes:''},
-    {id:188,task:'P8',zone:'Entrada Cargas e Descargas',start:'13 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:189,task:'P11',zone:'Entrada Portão Area Tecnica',start:'13 Jul',end:'28 Jul',prog:0,notes:''},
-    {id:190,task:'P34',zone:'Entrada Portico',start:'13 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:208,task:'P13',zone:'Entrada Principal Players',start:'16 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:209,task:'P16',zone:'Entrada Wine Bar/Players Lounge',start:'16 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:210,task:'P18',zone:'Entrada Estadio Corredor Players',start:'16 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:211,task:'P9',zone:'Parque Staff 1',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:212,task:'P12',zone:'Corredor Fun Center',start:'17 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:213,task:'P14',zone:'Players Lounge',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:214,task:'P15',zone:'Entrada secundária Players Lounge',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:215,task:'P17',zone:'Entrada Estadio Publico Norte',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:216,task:'P19',zone:'Estadio Millennium',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:217,task:'P20',zone:'Entrada Estadio Players',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:218,task:'P21',zone:'Entrada Estadio Publico Sul',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:219,task:'P22',zone:'Corredor Court Cascais',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:220,task:'P23',zone:'Acesso TV Compound',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:221,task:'P24',zone:'Entrada Lateral Camarotes',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:222,task:'P25',zone:'Entrada Topo Oeste Camarotes',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:223,task:'P26',zone:'Entrada Topo Este Camarotes',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:224,task:'P27',zone:'Entrada Secundária Slice Lounge',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:225,task:'P28',zone:'Entrada Cascais Terrace',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:226,task:'P29',zone:'Movel Slice',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:227,task:'P30',zone:'Entrada Principal Slice',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:228,task:'P31',zone:'Entrada Press',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:229,task:'P32',zone:'Estacionamento  Valet 1',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:230,task:'P33',zone:'Estacionamento Valet 2',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:231,task:'P35',zone:'Movel Recinto',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:232,task:'P36',zone:'Acompanhamento de Jogadores',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:233,task:'P37',zone:'Corredor Padel/Area Tecnica',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:234,task:'P39',zone:'Estacionamento Parque 1',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-    {id:235,task:'P40',zone:'Autodromo',start:'17 Jul',end:'26 Jul',prog:0,notes:''},
-  ]},
-  'irmarfer':{label:'Irmarfer',tasks:[
-    {id:24,task:'Estaleiro Irmarfer',zone:'Pickleball/Parque A',start:'1 Jun',end:'23 Ago',prog:0,notes:''},
-    {id:32,task:'TELA PROTECÇÃO PISCINA',zone:'',start:'1 Jun',end:'1 Jun',prog:0,notes:''},
-    {id:35,task:'ESTRADO 25X45',zone:'',start:'2 Jun',end:'5 Jun',prog:0,notes:''},
-    {id:36,task:'VIGAS AÇO PISCINA',zone:'',start:'2 Jun',end:'2 Jun',prog:0,notes:''},
-    {id:43,task:'TENDA IGLO 25X45 CRISTAL',zone:'',start:'8 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:44,task:'ESTRADO 10X20',zone:'',start:'8 Jun',end:'8 Jun',prog:0,notes:''},
-    {id:45,task:'ESTRADO 10X10',zone:'',start:'8 Jun',end:'8 Jun',prog:0,notes:''},
-    {id:52,task:'TENDA MS10X20',zone:'',start:'9 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:53,task:'TENDA MS10X10',zone:'',start:'9 Jun',end:'9 Jun',prog:0,notes:''},
-    {id:54,task:'MONTAGEM DE ESTRADO 29,375m x 49,375m',zone:'',start:'9 Jun',end:'10 Jun',prog:0,notes:''},
-    {id:56,task:'ESTRADO INTERIOR',zone:'',start:'10 Jun',end:'16 Jun',prog:0,notes:''},
-    {id:57,task:'LINÓLEO',zone:'',start:'10 Jun',end:'10 Jun',prog:0,notes:''},
-    {id:58,task:'PORTA DUPLA ANTI-PÃNICO',zone:'',start:'10 Jun',end:'10 Jun',prog:0,notes:''},
-    {id:59,task:'COLOCAÇÃO DE PORTAS DE CORRER',zone:'',start:'10 Jun',end:'10 Jun',prog:0,notes:''},
-    {id:60,task:'COLOCAÇÃO DE ALCATIFA',zone:'',start:'11 Jun',end:'11 Jun',prog:0,notes:''},
-    {id:61,task:'MONTAGEM DE STANDS',zone:'',start:'11 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:63,task:'ILUMINAÇÃO DE STANDS',zone:'',start:'12 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:64,task:'MONTAGEM DE 1x CONE 5x5',zone:'',start:'12 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:66,task:'ESTRADO 25X35',zone:'',start:'15 Jun',end:'18 Jun',prog:0,notes:''},
-    {id:67,task:'ESTRADO 20X20',zone:'',start:'15 Jun',end:'15 Jun',prog:0,notes:''},
-    {id:69,task:'GUARDA-CORPO VIDRO',zone:'',start:'16 Jun',end:'19 Jun',prog:0,notes:''},
-    {id:70,task:'ESCADAS',zone:'',start:'17 Jun',end:'19 Jun',prog:0,notes:''},
-    {id:72,task:'ESTRADO 17,5X15 BARBECUE',zone:'',start:'19 Jun',end:'19 Jun',prog:0,notes:''},
-    {id:73,task:'ESTRADO 5X10 ESCRITÓRIO',zone:'',start:'19 Jun',end:'19 Jun',prog:0,notes:''},
-    {id:74,task:'TENDA MULT. 5X10 ESCRITÓRIO',zone:'',start:'19 Jun',end:'19 Jun',prog:0,notes:''},
-    {id:75,task:'ESTRADO CONTENTORES12,5x7,5',zone:'',start:'19 Jun',end:'19 Jun',prog:0,notes:''},
-    {id:76,task:'PORTAS',zone:'',start:'22 Jun',end:'23 Jun',prog:0,notes:''},
-    {id:79,task:'ESTRADO 7,5X7,5 (WC SL RESTAURANT)',zone:'',start:'23 Jun',end:'24 Jun',prog:0,notes:''},
-    {id:80,task:'TENDA MS7,5X7,5  (WC SL RESTAURANT)',zone:'',start:'23 Jun',end:'24 Jun',prog:0,notes:''},
-    {id:86,task:'ESTRADO 8X8',zone:'',start:'25 Jun',end:'25 Jun',prog:0,notes:''},
-    {id:87,task:'ESTRADO 12,5X15 (PREMIUM BAR)',zone:'',start:'25 Jun',end:'25 Jun',prog:0,notes:''},
-    {id:89,task:'TENDA MS 8X8',zone:'',start:'26 Jun',end:'26 Jun',prog:0,notes:''},
-    {id:92,task:'PAREDE STAND - escola',zone:'',start:'29 Jun',end:'29 Jun',prog:0,notes:''},
-    {id:93,task:'ESTRADO 3,75X17,5 VARANDA  Cascais TERRACE',zone:'',start:'29 Jun',end:'29 Jun',prog:0,notes:''},
-    {id:94,task:'ESTRADO 3,75X5,5 (PORSHE)',zone:'',start:'30 Jun',end:'30 Jun',prog:0,notes:''},
-    {id:95,task:'ESTRADO 2,5X2,5 (ESTUDIO)  Cascais TERRACE',zone:'',start:'1 Jul',end:'1 Jul',prog:0,notes:''},
-    {id:96,task:'ESTRADO TERRAÇO PARA DECK  Cascais TERRACE',zone:'',start:'1 Jul',end:'1 Jul',prog:0,notes:''},
-    {id:100,task:'ESTRADO 50X35 (c/protecção piso)',zone:'',start:'2 Jul',end:'6 Jul',prog:0,notes:''},
-    {id:101,task:'ESTRADO TERRAÇO 5X1,25 Cascais TERRACE',zone:'',start:'2 Jul',end:'2 Jul',prog:0,notes:''},
-    {id:103,task:'CONE 5X5 x 2 c/caleiro (tv compound)',zone:'',start:'2 Jul',end:'2 Jul',prog:0,notes:''},
-    {id:104,task:'ESTRADO 5X5 (apanha Bolas)',zone:'',start:'2 Jul',end:'2 Jul',prog:0,notes:''},
-    {id:109,task:'ESTRADO 10X10',zone:'',start:'3 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:110,task:'TENDA 10X10',zone:'',start:'3 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:111,task:'ALCATIFA',zone:'',start:'3 Jul',end:'3 Jul',prog:0,notes:''},
-    {id:117,task:'ESTRADO 7,5X35',zone:'',start:'6 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:118,task:'TENDA 15X10',zone:'',start:'6 Jul',end:'7 Jul',prog:0,notes:''},
-    {id:120,task:'TENDA CÓNICA 5X5',zone:'',start:'7 Jul',end:'7 Jul',prog:0,notes:''},
-    {id:121,task:'ESTRADO 15x16,5',zone:'',start:'7 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:141,task:'DIVISÓRIAS PAINEL SANDWICH',zone:'',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:142,task:'LINÓLEO',zone:'',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:143,task:'ESTRADO 5x12,5 (porshe) c/escada',zone:'',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:144,task:'c/escada',zone:'',start:'8 Jul',end:'8 Jul',prog:0,notes:''},
-    {id:162,task:'ESTRADO 10X5',zone:'',start:'9 Jul',end:'10 Jul',prog:0,notes:''},
-    {id:168,task:'TENDA MS 10X5',zone:'',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
-    {id:169,task:'ALCATIFA 10X5',zone:'',start:'10 Jul',end:'10 Jul',prog:0,notes:''},
-  ]},
-  'oneway':{label:'One WAY',tasks:[
-    {id:41,task:'Visita técnica ao espaço',zone:'Visita',start:'5 Jun',end:'5 Jun',prog:0,notes:''},
-    {id:46,task:'Passagem de Guias para cabos',zone:'Montagem',start:'8 Jun',end:'12 Jun',prog:0,notes:''},
-    {id:147,task:'Montagem Estruturas Truss',zone:'Montagem',start:'8 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:148,task:'Montagem Iluminação',zone:'Montagem',start:'8 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:149,task:'Montagem Som',zone:'Montagem',start:'8 Jul',end:'9 Jul',prog:0,notes:''},
-    {id:191,task:'Montagens Som',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:192,task:'Montagem Regie e Testes',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:193,task:'Montagem Som Jogadores e Árbitros',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:194,task:'Montagem Montagem Regie ATP',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:195,task:'Montagem Som',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:196,task:'Montagem Regie e Testes',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:197,task:'Montagem de Som',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:198,task:'Montagem de Tvs',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:199,task:'Montagem de Som',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:200,task:'Montagem de Tv',zone:'Montagem',start:'13 Jul',end:'17 Jul',prog:0,notes:''},
-    {id:207,task:'Montagem Estrutas Luz Cénica',zone:'Montagem',start:'15 Jul',end:'16 Jul',prog:0,notes:''},
-    {id:236,task:'Montagem Sorteio',zone:'Montagem',start:'18 Jul',end:'18 Jul',prog:0,notes:''},
-    {id:237,task:'Montagem Luz Festas',zone:'Montagem',start:'21 Jul',end:'25 Jul',prog:0,notes:''},
-    {id:238,task:'Montagem Som Festas',zone:'Montagem',start:'21 Jul',end:'25 Jul',prog:0,notes:''},
-    {id:239,task:'Desmontagens Slice Lounge',zone:'Desmontagem',start:'26 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:240,task:'Desmontagens Court 2 e 3',zone:'Desmontagem',start:'26 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:241,task:'Desmontagens Sala Conferências',zone:'Desmontagem',start:'26 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:242,task:'Desmontagem Kids Club',zone:'Desmontagem',start:'26 Jul',end:'27 Jul',prog:0,notes:''},
-    {id:244,task:'Desmontagens Court Central',zone:'Desmontagem',start:'27 Jul',end:'28 Jul',prog:0,notes:''},
-  ]},
-  'cores_irmarfer':{label:'7Cores/Irmarfer',tasks:[
-    {id:97,task:'Montagem de Smash Area',zone:'Courts Piso Rápido',start:'2 Jul',end:'29 Jul',prog:0,notes:''},
-    {id:98,task:'Montagem de Food Court',zone:'Courts sintéticos',start:'2 Jul',end:'29 Jul',prog:0,notes:''},
-  ]},
-  'moove':{label:'Moove/Festa Aluga',tasks:[
-    {id:114,task:'Condicionamento piso -1',zone:'Sala de bridge',start:'6 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:115,task:'Condicionamento piso -1',zone:'Sala de sócios',start:'6 Jul',end:'31 Jul',prog:0,notes:''},
-  ]},
-  'niu':{label:'NIU',tasks:[
-    {id:116,task:'Estruturas Courts Cobertos',zone:'Fun Center',start:'6 Jul',end:'16 Jul',prog:0,notes:''},
-    {id:151,task:'Montagem stand Porsche',zone:'Smash Area',start:'9 Jul',end:'17 Jul',prog:0,notes:''},
-  ]},
-  'festaaluga':{label:'Festa Aluga/H.Luz',tasks:[
-    {id:173,task:'Condicionamento piso -2',zone:'Ginásio',start:'13 Jul',end:'29 Jul',prog:0,notes:''},
-  ]},
-  'mactecnica':{label:'Mactecnica',tasks:[
-    {id:206,task:'Mactecnica',zone:'',start:'14 Jul',end:'14 Jul',prog:0,notes:''},
+  infra:{label:'Infraestruturas',tasks:[
+    {id:1,task:'Quadros elétricos',      zone:'Area Tecnica',     start:'1 Jun', end:'15 Jun',prog:0,notes:'Simpleway'},
+    {id:2,task:'Passagem de cabos',      zone:'Recinto',          start:'15 Jun',end:'30 Jun',prog:0,notes:'Simpleway'},
+    {id:3,task:'Canalização',            zone:'Cozinha e Slice Restaurant',start:'1 Jun',end:'20 Jun',prog:0,notes:'Hélder Branco'},
+    {id:4,task:'Telecomunicações',       zone:'TV Compound',      start:'1 Jun', end:'10 Jul',prog:0,notes:'André Paiva'},
+    {id:5,task:'Wi-Fi e rede',           zone:'TV Compound',      start:'5 Jun', end:'10 Jul',prog:0,notes:'MEO'},
+    {id:6,task:'TV interna',             zone:'TV Compound',      start:'1 Jun', end:'15 Jul',prog:0,notes:'MAC Técnica'},
   ]},
 };
 
@@ -1246,258 +1012,92 @@ const AREAS_LIST = ['Manutenção','Estruturas','AV/Técnico','Energia','Canaliz
   'Segurança','Limpeza','Arquitetura','Coordenação','Patrocinadores','Geral'];
 
 const SCHED_ENTRIES = [
-  {sid:'innowave',s:[2026,1,25],e:[2026,2,3],act:'Parecer da Innowave ao nosso prompt e timings plataforma'},
-  {sid:'tlove',s:[2026,2,3],e:[2026,2,16],act:'Negociação comercial Innowave/M EO'},
-  {sid:'innowave',s:[2026,2,16],e:[2026,3,2],act:'Desenvolvimento da plataforma'},
-  {sid:'innowave',s:[2026,3,3],e:[2026,3,3],act:'Apresentação do backend da plataforma à 3Love'},
-  {sid:'tlove',s:[2026,3,3],e:[2026,3,8],act:'Discussão, Inputs e Análise de backend de plataforma'},
-  {sid:'cmc',s:[2026,4,20],e:[2026,4,20],act:'Pedido de baias baixas'},
-  {sid:'tlove',s:[2026,4,25],e:[2026,5,28],act:'Low Pré-evento'},
-  {sid:'tlove',s:[2026,4,25],e:[2026,7,31],act:'Início de montagens — CTE'},
-  {sid:'7cores',s:[2026,4,25],e:[2026,7,31],act:'Manutenção e desmontagens CTE — CTE'},
-  {sid:'7cores',s:[2026,4,25],e:[2026,4,26],act:'Derrubar muros de terreno externo — Terreno externo'},
-  {sid:'mbw',s:[2026,4,25],e:[2026,4,30],act:'Montagem de bancada — Court Cascais'},
-  {sid:'mbw',s:[2026,4,25],e:[2026,7,31],act:'WC Staff M/F — Módulos'},
-  {sid:'powershield',s:[2026,4,25],e:[2026,7,15],act:'P1 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA) — Entrada TV Compound'},
-  {sid:'mbw',s:[2026,4,25],e:[2026,4,26],act:'Descarga de material (Zona de Stock) — COZINHA'},
-  {sid:'7cores',s:[2026,4,27],e:[2026,4,27],act:'Desmontagem de redes e lonas de fundo — Court Geza Torok'},
-  {sid:'7cores',s:[2026,4,27],e:[2026,4,29],act:'Desmontagem de postes de iluminação e relva sintética pickleball'},
-  {sid:'7cores',s:[2026,4,28],e:[2026,4,28],act:'Colocação de redes de fundo de substituição — Court Geza Torok'},
-  {sid:'7cores',s:[2026,4,29],e:[2026,4,29],act:'Recolha de plantas da varanda — Piscina'},
-  {sid:'cmc',s:[2026,4,30],e:[2026,4,30],act:'Entrega de baias baixas'},
-  {sid:'powershield',s:[2026,4,31],e:[2026,5,1],act:'P3 — Rotunda'},
-  {sid:'mbw',s:[2026,5,1],e:[2026,7,23],act:'Montagem  e desmontagem de bancada — Court Geza Torok/Millennium'},
-  {sid:'7cores',s:[2026,5,1],e:[2026,5,4],act:'Delimitação de obra com baias baixas — CTE'},
-  {sid:'mbw',s:[2026,5,1],e:[2026,7,21],act:'Estaleiro MBW — Traseiras Court Cascais'},
-  {sid:'irmarfer',s:[2026,5,1],e:[2026,7,23],act:'Estaleiro Irmarfer — Pickleball/Parque A'},
-  {sid:'7cores',s:[2026,5,1],e:[2026,5,2],act:'Desmontagem de corrimãos e chuveiro piscina'},
-  {sid:'7cores',s:[2026,5,1],e:[2026,5,3],act:'Desmontagem de corrimãos varanda — Piscina'},
-  {sid:'7cores',s:[2026,5,1],e:[2026,5,3],act:'Colocação de baias baixas na varanda'},
-  {sid:'tlove',s:[2026,5,1],e:[2026,7,15],act:'Condicionamento varanda sala de sócios'},
-  {sid:'mbw',s:[2026,5,1],e:[2026,7,31],act:'VIGILÂNCIA — Módulos'},
-  {sid:'mbw',s:[2026,5,1],e:[2026,7,31],act:'SEGURANÇA/VALET — Módulos'},
-  {sid:'mbw',s:[2026,5,1],e:[2026,5,1],act:'SALA MEETING ROOM — Módulos'},
-  {sid:'irmarfer',s:[2026,5,1],e:[2026,5,1],act:'TELA PROTECÇÃO PISCINA'},
-  {sid:'powershield',s:[2026,5,1],e:[2026,7,15],act:'P2 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA) — Entrada Portão'},
-  {sid:'7cores',s:[2026,5,2],e:[2026,5,3],act:'Desmontagem de pérgula — Passeio CTE'},
-  {sid:'irmarfer',s:[2026,5,2],e:[2026,5,5],act:'ESTRADO 25X45'},
-  {sid:'irmarfer',s:[2026,5,2],e:[2026,5,2],act:'VIGAS AÇO PISCINA'},
-  {sid:'7cores',s:[2026,5,3],e:[2026,5,5],act:'Remoção de bancos e material envolvente do Estadio'},
-  {sid:'mbw',s:[2026,5,3],e:[2026,5,12],act:'Bancada lateral Camarotes VIP (Poente) — Bancadas'},
-  {sid:'7cores',s:[2026,5,4],e:[2026,5,4],act:'Desmontagem de mini-tenis/bate bolas'},
-  {sid:'powershield',s:[2026,5,5],e:[2026,7,10],act:'P4 — Terreno Cozinha/Muros'},
-  {sid:'oneway',s:[2026,5,5],e:[2026,5,5],act:'Visita técnica ao espaço — Visita'},
-  {sid:'powershield',s:[2026,5,7],e:[2026,5,9],act:'P3 — Rotunda'},
-  {sid:'irmarfer',s:[2026,5,8],e:[2026,5,12],act:'TENDA IGLO 25X45 CRISTAL'},
-  {sid:'irmarfer',s:[2026,5,8],e:[2026,5,8],act:'ESTRADO 10X20'},
-  {sid:'irmarfer',s:[2026,5,8],e:[2026,5,8],act:'ESTRADO 10X10'},
-  {sid:'oneway',s:[2026,5,8],e:[2026,5,12],act:'Passagem de Guias para cabos — Montagem'},
-  {sid:'7cores',s:[2026,5,8],e:[2026,5,12],act:'COLOCAÇÃO DE ALCATIFA — Camarotes Lateral'},
-  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'LAVA COPOS — Módulos'},
-  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'ARRECADAÇÃO FLAMINGO BOÉMIO — Módulos'},
-  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'WC SLICE LOUNGE — Módulos'},
-  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'REGIE — Módulos'},
-  {sid:'irmarfer',s:[2026,5,9],e:[2026,5,9],act:'TENDA MS10X20'},
-  {sid:'irmarfer',s:[2026,5,9],e:[2026,5,9],act:'TENDA MS10X10'},
-  {sid:'irmarfer',s:[2026,5,9],e:[2026,5,10],act:'MONTAGEM DE ESTRADO 29,375m x 49,375m'},
-  {sid:'mbw',s:[2026,5,10],e:[2026,7,10],act:'Condicionamento de passagem varanda restaurante — Restaurante'},
-  {sid:'irmarfer',s:[2026,5,10],e:[2026,5,16],act:'ESTRADO INTERIOR'},
-  {sid:'irmarfer',s:[2026,5,10],e:[2026,5,10],act:'LINÓLEO'},
-  {sid:'irmarfer',s:[2026,5,10],e:[2026,5,10],act:'PORTA DUPLA ANTI-PÃNICO'},
-  {sid:'irmarfer',s:[2026,5,10],e:[2026,5,10],act:'COLOCAÇÃO DE PORTAS DE CORRER'},
-  {sid:'irmarfer',s:[2026,5,11],e:[2026,5,11],act:'COLOCAÇÃO DE ALCATIFA'},
-  {sid:'irmarfer',s:[2026,5,11],e:[2026,5,12],act:'MONTAGEM DE STANDS'},
-  {sid:'mbw',s:[2026,5,11],e:[2026,5,23],act:'Bancada Topo Camarotes (Norte) — Bancadas'},
-  {sid:'irmarfer',s:[2026,5,12],e:[2026,5,12],act:'ILUMINAÇÃO DE STANDS'},
-  {sid:'irmarfer',s:[2026,5,12],e:[2026,5,12],act:'MONTAGEM DE 1x CONE 5x5'},
-  {sid:'powershield',s:[2026,5,14],e:[2026,7,15],act:'P3 — Rotunda'},
-  {sid:'irmarfer',s:[2026,5,15],e:[2026,5,18],act:'ESTRADO 25X35'},
-  {sid:'irmarfer',s:[2026,5,15],e:[2026,5,15],act:'ESTRADO 20X20'},
-  {sid:'7cores',s:[2026,5,15],e:[2026,5,16],act:'COLOCAÇÃO DE ALCATIFA — Camarotes Lateral'},
-  {sid:'irmarfer',s:[2026,5,16],e:[2026,5,19],act:'GUARDA-CORPO VIDRO'},
-  {sid:'irmarfer',s:[2026,5,17],e:[2026,5,19],act:'ESCADAS'},
-  {sid:'7cores',s:[2026,5,17],e:[2026,5,20],act:'Colocação de Relva — Slice Lounge/Entrada Slice/Escritório Slice'},
-  {sid:'irmarfer',s:[2026,5,19],e:[2026,5,19],act:'ESTRADO 17,5X15 BARBECUE'},
-  {sid:'irmarfer',s:[2026,5,19],e:[2026,5,19],act:'ESTRADO 5X10 ESCRITÓRIO'},
-  {sid:'irmarfer',s:[2026,5,19],e:[2026,5,19],act:'TENDA MULT. 5X10 ESCRITÓRIO'},
-  {sid:'irmarfer',s:[2026,5,19],e:[2026,5,19],act:'ESTRADO CONTENTORES12,5x7,5'},
-  {sid:'irmarfer',s:[2026,5,22],e:[2026,5,23],act:'PORTAS'},
-  {sid:'mbw',s:[2026,5,22],e:[2026,6,7],act:'Canto — Bancadas'},
-  {sid:'7cores',s:[2026,5,22],e:[2026,5,26],act:'COLOCAÇÃO DE ALCATIFA — Camarotes Topo Norte'},
-  {sid:'irmarfer',s:[2026,5,23],e:[2026,5,24],act:'ESTRADO 7,5X7,5 (WC SL RESTAURANT)'},
-  {sid:'irmarfer',s:[2026,5,23],e:[2026,5,24],act:'TENDA MS7,5X7,5  (WC SL RESTAURANT)'},
-  {sid:'7cores',s:[2026,5,23],e:[2026,5,24],act:'Colocação de Relva'},
-  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'WC SLICE RESTAURANT — Módulos'},
-  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'SEGURANÇA — Módulos'},
-  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'ESCRITÓRIO PRODUÇÃO — Módulos'},
-  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'ARRECADAÇÃO BOLAS/TOALHAS — Módulos'},
-  {sid:'irmarfer',s:[2026,5,25],e:[2026,5,25],act:'ESTRADO 8X8'},
-  {sid:'irmarfer',s:[2026,5,25],e:[2026,5,25],act:'ESTRADO 12,5X15 (PREMIUM BAR)'},
-  {sid:'7cores',s:[2026,5,25],e:[2026,5,26],act:'Colocação de Relva — Premium Bar até Wine Bar'},
-  {sid:'irmarfer',s:[2026,5,26],e:[2026,5,26],act:'TENDA MS 8X8'},
-  {sid:'7cores',s:[2026,5,26],e:[2026,5,26],act:'Colocação de Relva — Tenda Players'},
-  {sid:'tlove',s:[2026,5,29],e:[2026,6,11],act:'Medium Pré-evento'},
-  {sid:'irmarfer',s:[2026,5,29],e:[2026,5,29],act:'PAREDE STAND - escola'},
-  {sid:'irmarfer',s:[2026,5,29],e:[2026,5,29],act:'ESTRADO 3,75X17,5 VARANDA  Cascais TERRACE'},
-  {sid:'irmarfer',s:[2026,5,30],e:[2026,5,30],act:'ESTRADO 3,75X5,5 (PORSHE)'},
-  {sid:'irmarfer',s:[2026,6,1],e:[2026,6,1],act:'ESTRADO 2,5X2,5 (ESTUDIO)  Cascais TERRACE'},
-  {sid:'irmarfer',s:[2026,6,1],e:[2026,6,1],act:'ESTRADO TERRAÇO PARA DECK  Cascais TERRACE'},
-  {sid:'cores_irmarfer',s:[2026,6,2],e:[2026,6,29],act:'Montagem de Smash Area — Courts Piso Rápido'},
-  {sid:'cores_irmarfer',s:[2026,6,2],e:[2026,6,29],act:'Montagem de Food Court — Courts sintéticos'},
-  {sid:'mbw',s:[2026,6,2],e:[2026,6,2],act:'PREMIUM BAR — Módulos'},
-  {sid:'irmarfer',s:[2026,6,2],e:[2026,6,6],act:'ESTRADO 50X35 (c/protecção piso)'},
-  {sid:'irmarfer',s:[2026,6,2],e:[2026,6,2],act:'ESTRADO TERRAÇO 5X1,25 Cascais TERRACE'},
-  {sid:'7cores',s:[2026,6,2],e:[2026,6,3],act:'Colocação de Relva'},
-  {sid:'irmarfer',s:[2026,6,2],e:[2026,6,2],act:'CONE 5X5 x 2 c/caleiro (tv compound)'},
-  {sid:'irmarfer',s:[2026,6,2],e:[2026,6,2],act:'ESTRADO 5X5 (apanha Bolas)'},
-  {sid:'powershield',s:[2026,6,2],e:[2026,6,31],act:'P5 — Saída FoodCourt'},
-  {sid:'mbw',s:[2026,6,3],e:[2026,6,3],act:'Módulo 4 arrecadações — Módulos'},
-  {sid:'mbw',s:[2026,6,3],e:[2026,6,3],act:'VESTIÁRIOS — Módulos'},
-  {sid:'mbw',s:[2026,6,3],e:[2026,6,3],act:'ARRECADAÇÃO PARCEIROS — Módulos'},
-  {sid:'irmarfer',s:[2026,6,3],e:[2026,6,3],act:'ESTRADO 10X10'},
-  {sid:'irmarfer',s:[2026,6,3],e:[2026,6,3],act:'TENDA 10X10'},
-  {sid:'irmarfer',s:[2026,6,3],e:[2026,6,3],act:'ALCATIFA'},
-  {sid:'powershield',s:[2026,6,4],e:[2026,7,31],act:'P10 — Saída Emergência Topo'},
-  {sid:'7cores',s:[2026,6,6],e:[2026,6,8],act:'Colocação de Relva'},
-  {sid:'moove',s:[2026,6,6],e:[2026,6,31],act:'Condicionamento piso -1 — Sala de bridge'},
-  {sid:'moove',s:[2026,6,6],e:[2026,6,31],act:'Condicionamento piso -1 — Sala de sócios'},
-  {sid:'niu',s:[2026,6,6],e:[2026,6,16],act:'Estruturas Courts Cobertos — Fun Center'},
-  {sid:'irmarfer',s:[2026,6,6],e:[2026,6,8],act:'ESTRADO 7,5X35'},
-  {sid:'irmarfer',s:[2026,6,6],e:[2026,6,7],act:'TENDA 15X10'},
-  {sid:'mbw',s:[2026,6,6],e:[2026,6,16],act:'Bancada Topo Cadeira (Sul) — Bancadas'},
-  {sid:'irmarfer',s:[2026,6,7],e:[2026,6,7],act:'TENDA CÓNICA 5X5'},
-  {sid:'irmarfer',s:[2026,6,7],e:[2026,6,8],act:'ESTRADO 15x16,5'},
-  {sid:'tlove',s:[2026,6,8],e:[2026,6,31],act:'Court de jogo — Court 3/CTE'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,31],act:'Montagem e desmontagem de bancada — Court 4'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,31],act:'Montagem Bancada — Court 7'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CORREDOR STANDS (lado esquerdo smash area) — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STAND PEQUENO — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CORREDOR STANDS (lado direito smash area) — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'BAR — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'RFM — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'SERVIÇOS MÉDICOS — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STAND H.LUZ COMERCIAL — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STAND ALTANO — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CTE — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'PARCEIROS — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'PARCEIROS — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'POSTO DE COMANDO — Módulos'},
-  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CCTV — Módulos'},
-  {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'DIVISÓRIAS PAINEL SANDWICH'},
-  {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'LINÓLEO'},
-  {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'ESTRADO 5x12,5 (porshe) c/escada'},
-  {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'c/escada'},
-  {sid:'powershield',s:[2026,6,8],e:[2026,6,31],act:'P6 — Posto de Segurança'},
-  {sid:'powershield',s:[2026,6,8],e:[2026,6,26],act:'P38 — Entrada Recinto'},
-  {sid:'oneway',s:[2026,6,8],e:[2026,6,9],act:'Montagem Estruturas Truss — Montagem'},
-  {sid:'oneway',s:[2026,6,8],e:[2026,6,9],act:'Montagem Iluminação — Montagem'},
-  {sid:'oneway',s:[2026,6,8],e:[2026,6,9],act:'Montagem Som — Montagem'},
-  {sid:'7cores',s:[2026,6,9],e:[2026,6,10],act:'COLOCAÇÃO DE ALCATIFA — Bancadas'},
-  {sid:'niu',s:[2026,6,9],e:[2026,6,17],act:'Montagem stand Porsche — Smash Area'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'LIMPEZA Perimetro Final — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'ENERGIA — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'MANUTENÇÃO DE CAMPO — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'Canalização — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'Limpeza CMC — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'Copa Segurança — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'BILHETEIRA/ACREDITAÇÃO — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'BENGALEIRO — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'VESTIÁRIOS — Módulos'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'COPA — Módulos'},
-  {sid:'irmarfer',s:[2026,6,9],e:[2026,6,10],act:'ESTRADO 10X5'},
-  {sid:'mbw',s:[2026,6,9],e:[2026,6,14],act:'Court CTE — Bancadas'},
-  {sid:'7cores',s:[2026,6,10],e:[2026,6,10],act:'Colocação de Relva — Estrado bilheteira'},
-  {sid:'7cores',s:[2026,6,10],e:[2026,6,10],act:'Colocação de Relva'},
-  {sid:'tlove',s:[2026,6,10],e:[2026,6,31],act:'Condicionamento piso -2 — Pilates'},
-  {sid:'mbw',s:[2026,6,10],e:[2026,6,10],act:'FOOD CONTAINER — Módulos'},
-  {sid:'irmarfer',s:[2026,6,10],e:[2026,6,10],act:'TENDA MS 10X5'},
-  {sid:'irmarfer',s:[2026,6,10],e:[2026,6,10],act:'ALCATIFA 10X5'},
-  {sid:'tlove',s:[2026,6,11],e:[2026,6,17],act:'High Pré-evento'},
-  {sid:'tlove',s:[2026,6,11],e:[2026,6,31],act:'Condicionamento piso -2 — Balneários'},
-  {sid:'tlove',s:[2026,6,11],e:[2026,6,31],act:'Condicionamento piso 0 — Recepção'},
-  {sid:'festaaluga',s:[2026,6,13],e:[2026,6,29],act:'Condicionamento piso -2 — Ginásio'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'SEGURANÇA — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'VALET — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'BOLT 6 — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'ATP — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'MEO — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'UCOM — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'UCOM  CZ — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'REGIE — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC MOBILIDADE REDUZIDA — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC EMERGENCIA — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC MASCULINOS — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC FEMININOS — Módulos'},
-  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'IMG ARENA — Módulos'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,28],act:'P7 — Armazem Geral'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,26],act:'P8 — Entrada Cargas e Descargas'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,28],act:'P11 — Entrada Portão Area Tecnica'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,27],act:'P34 — Entrada Portico'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagens Som — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Regie e Testes — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Som Jogadores e Árbitros — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Montagem Regie ATP — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Som — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Regie e Testes — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem de Som — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem de Tvs — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem de Som — Montagem'},
-  {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem de Tv — Montagem'},
-  {sid:'7cores',s:[2026,6,14],e:[2026,6,29],act:'Colocação de Relva — Courts A+B'},
-  {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 5'},
-  {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 6'},
-  {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 1'},
-  {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 2'},
-  {sid:'mactecnica',s:[2026,6,14],e:[2026,6,14],act:'Mactecnica'},
-  {sid:'oneway',s:[2026,6,15],e:[2026,6,16],act:'Montagem Estrutas Luz Cénica — Montagem'},
-  {sid:'powershield',s:[2026,6,16],e:[2026,6,26],act:'P13 — Entrada Principal Players'},
-  {sid:'powershield',s:[2026,6,16],e:[2026,6,27],act:'P16 — Entrada Wine Bar/Players Lounge'},
-  {sid:'powershield',s:[2026,6,16],e:[2026,6,26],act:'P18 — Entrada Estadio Corredor Players'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P9 — Parque Staff 1'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,27],act:'P12 — Corredor Fun Center'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P14 — Players Lounge'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P15 — Entrada secundária Players Lounge'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P17 — Entrada Estadio Publico Norte'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P19 — Estadio Millennium'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P20 — Entrada Estadio Players'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P21 — Entrada Estadio Publico Sul'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P22 — Corredor Court Cascais'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P23 — Acesso TV Compound'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P24 — Entrada Lateral Camarotes'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P25 — Entrada Topo Oeste Camarotes'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P26 — Entrada Topo Este Camarotes'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P27 — Entrada Secundária Slice Lounge'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P28 — Entrada Cascais Terrace'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P29 — Movel Slice'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P30 — Entrada Principal Slice'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P31 — Entrada Press'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P32 — Estacionamento  Valet 1'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P33 — Estacionamento Valet 2'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P35 — Movel Recinto'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P36 — Acompanhamento de Jogadores'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P37 — Corredor Padel/Area Tecnica'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P39 — Estacionamento Parque 1'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P40 — Autodromo'},
-  {sid:'oneway',s:[2026,6,18],e:[2026,6,18],act:'Montagem Sorteio — Montagem'},
-  {sid:'oneway',s:[2026,6,21],e:[2026,6,25],act:'Montagem Luz Festas — Montagem'},
-  {sid:'oneway',s:[2026,6,21],e:[2026,6,25],act:'Montagem Som Festas — Montagem'},
-  {sid:'oneway',s:[2026,6,26],e:[2026,6,27],act:'Desmontagens Slice Lounge — Desmontagem'},
-  {sid:'oneway',s:[2026,6,26],e:[2026,6,27],act:'Desmontagens Court 2 e 3 — Desmontagem'},
-  {sid:'oneway',s:[2026,6,26],e:[2026,6,27],act:'Desmontagens Sala Conferências — Desmontagem'},
-  {sid:'oneway',s:[2026,6,26],e:[2026,6,27],act:'Desmontagem Kids Club — Desmontagem'},
-  {sid:'tlove',s:[2026,6,27],e:[2026,6,31],act:'High Pós-evento'},
-  {sid:'oneway',s:[2026,6,27],e:[2026,6,28],act:'Desmontagens Court Central — Desmontagem'},
-  {sid:'tlove',s:[2026,7,1],e:[2026,7,6],act:'Medium Pós-evento'},
-  {sid:'tlove',s:[2026,7,7],e:[2026,7,31],act:'Low Pós-evento'},
+  {sid:'7cores', s:[2026,4,21],e:[2026,4,31],act:'Retirada de vedações — Recinto'},
+  {sid:'7cores', s:[2026,5,1], e:[2026,5,20],act:'Reparações gerais — Recinto'},
+  {sid:'7cores', s:[2026,4,25],e:[2026,5,5], act:'Preparação CTE — Court CTE'},
+  {sid:'7cores', s:[2026,5,5], e:[2026,5,15],act:'Colocação de relva — Slice'},
+  {sid:'7cores', s:[2026,5,1], e:[2026,5,20],act:'Colocação de relva — Recinto'},
+  {sid:'7cores', s:[2026,5,15],e:[2026,6,1], act:'Colocação de alcatifa — Estádio'},
+  {sid:'7cores', s:[2026,6,1], e:[2026,6,10],act:'Alcatifa Estádio'},
+  {sid:'7cores', s:[2026,6,17],e:[2026,6,26],act:'Manutenção diária — operação live'},
+  {sid:'7cores', s:[2026,6,27],e:[2026,7,31],act:'Manutenção e apoio às desmontagens — Recinto'},
+  {sid:'mbw',    s:[2026,5,1], e:[2026,5,10],act:'Recepção e organização de módulos — Warehouse Area'},
+  {sid:'mbw',    s:[2026,5,1], e:[2026,5,15],act:'Montagem courts de treino — Players'},
+  {sid:'mbw',    s:[2026,5,1], e:[2026,5,30],act:'Montagem camarotes — Estádio'},
+  {sid:'mbw',    s:[2026,5,5], e:[2026,6,5], act:'Montagem bancadas — Estádio'},
+  {sid:'mbw',    s:[2026,5,10],e:[2026,5,30],act:'Montagem estruturas — Court Cascais e Court CTE'},
+  {sid:'mbw',    s:[2026,6,27],e:[2026,7,31],act:'Desmontagem de estruturas'},
+  {sid:'irmarfer',s:[2026,5,1],e:[2026,5,15],act:'Montagem tendas — Food Court'},
+  {sid:'irmarfer',s:[2026,5,10],e:[2026,5,25],act:'Montagem estrados — Fun Center'},
+  {sid:'irmarfer',s:[2026,5,20],e:[2026,6,10],act:'Montagem tenda VIP — Slice'},
+  {sid:'irmarfer',s:[2026,6,11],e:[2026,6,16],act:'Montagem stands patrocinadores — Smash Area e Food Court'},
+  {sid:'irmarfer',s:[2026,6,27],e:[2026,7,31],act:'Desmontagem tendas e estruturas'},
+  {sid:'oneway', s:[2026,5,5], e:[2026,5,5], act:'Visita técnica — Slice e Slice Restaurant'},
+  {sid:'oneway', s:[2026,5,8], e:[2026,5,12],act:'Passagem de guias para cabos — Slice e Slice Restaurant'},
+  {sid:'oneway', s:[2026,6,8], e:[2026,6,9], act:'Montagem Truss + Iluminação + Som — Estádio'},
+  {sid:'oneway', s:[2026,6,11],e:[2026,6,15],act:'Montagem Som — Slice e Slice Restaurant'},
+  {sid:'oneway', s:[2026,6,14],e:[2026,6,15],act:'Montagem Luz Cénica — Slice'},
+  {sid:'oneway', s:[2026,6,11],e:[2026,6,15],act:'Regie, Testes, Som Jogadores + Regie ATP — Estádio'},
+  {sid:'oneway', s:[2026,6,17],e:[2026,6,17],act:'Montagem Sorteio — Slice'},
+  {sid:'oneway', s:[2026,6,20],e:[2026,6,24],act:'Montagem Luz Festas + Som Festas — Slice'},
+  {sid:'oneway', s:[2026,6,27],e:[2026,6,28],act:'Desmontagens — Slice e Estádio'},
+  {sid:'meo',    s:[2026,5,1], e:[2026,5,15],act:'Levantamento técnico Wi-Fi — TV Compound'},
+  {sid:'meo',    s:[2026,5,15],e:[2026,6,10],act:'Instalação infraestrutura de rede — TV Compound'},
+  {sid:'meo',    s:[2026,6,11],e:[2026,6,16],act:'Testes de cobertura Wi-Fi — Recinto'},
+  {sid:'meo',    s:[2026,6,17],e:[2026,6,26],act:'Suporte Wi-Fi — operação live'},
+  {sid:'meo',    s:[2026,6,27],e:[2026,7,15],act:'Desmontagem infraestrutura de rede — TV Compound'},
+  {sid:'simpleway',s:[2026,5,1],e:[2026,5,15],act:'Instalação quadros elétricos — Area Tecnica'},
+  {sid:'simpleway',s:[2026,5,15],e:[2026,5,30],act:'Passagem de cabos — Recinto'},
+  {sid:'simpleway',s:[2026,5,30],e:[2026,6,10],act:'Ligações elétricas — Smash Area, Food Court, Slice'},
+  {sid:'simpleway',s:[2026,6,11],e:[2026,6,16],act:'Testes elétricos gerais — Recinto'},
+  {sid:'simpleway',s:[2026,6,17],e:[2026,6,26],act:'Suporte elétrico — operação live'},
+  {sid:'simpleway',s:[2026,6,27],e:[2026,7,31],act:'Desmontagem instalações elétricas — Area Tecnica'},
+  {sid:'helder', s:[2026,5,1], e:[2026,5,20],act:'Instalação canalização — Cozinha e Slice Restaurant'},
+  {sid:'helder', s:[2026,5,20],e:[2026,5,30],act:'Canalização — Food Court e Slice'},
+  {sid:'helder', s:[2026,6,1], e:[2026,6,10],act:'Acabamentos e testes — Recinto'},
+  {sid:'helder', s:[2026,6,17],e:[2026,6,26],act:'Suporte canalização — operação live'},
+  {sid:'ruigrilo',s:[2026,4,21],e:[2026,6,16],act:'Acompanhamento de obra e plano de segurança — Recinto'},
+  {sid:'ruigrilo',s:[2026,6,17],e:[2026,6,26],act:'Validação operacional e segurança — Recinto'},
+  {sid:'ruigrilo',s:[2026,6,27],e:[2026,7,31],act:'Acompanhamento desmontagens — Recinto'},
+  {sid:'andre',  s:[2026,5,1], e:[2026,5,15],act:'Instalação telecomunicações — TV Compound'},
+  {sid:'andre',  s:[2026,5,15],e:[2026,5,30],act:'Configuração computadores e rede — TV Compound'},
+  {sid:'andre',  s:[2026,5,30],e:[2026,6,10],act:'Testes de telecomunicações — Recinto'},
+  {sid:'andre',  s:[2026,6,11],e:[2026,6,16],act:'Validação sistemas telecom — TV Compound'},
+  {sid:'andre',  s:[2026,6,17],e:[2026,6,26],act:'Suporte telecom e IT — operação live'},
+  {sid:'mac',    s:[2026,5,1], e:[2026,5,20],act:'Instalação sistema TV interna — TV Compound'},
+  {sid:'mac',    s:[2026,5,20],e:[2026,6,10],act:'Ligação ecrãs e sinal — Estádio e Recinto'},
+  {sid:'mac',    s:[2026,6,11],e:[2026,6,15],act:'Testes transmissão TV interna — Recinto'},
+  {sid:'mac',    s:[2026,6,17],e:[2026,6,26],act:'Operação TV interna — live'},
+  {sid:'moove',  s:[2026,5,1], e:[2026,5,15],act:'Transporte e armazenamento mobiliário — Warehouse Area'},
+  {sid:'moove',  s:[2026,5,15],e:[2026,6,10],act:'Distribuição mobiliário — Slice, Slice Restaurant, Premium Bar'},
+  {sid:'moove',  s:[2026,6,17],e:[2026,6,26],act:'Suporte logístico — operação live'},
+  {sid:'moove',  s:[2026,6,27],e:[2026,7,31],act:'Recolha mobiliário — Warehouse Area'},
+  {sid:'festa',  s:[2026,5,1], e:[2026,5,20],act:'Decoração tenda VIP — Slice'},
+  {sid:'festa',  s:[2026,5,20],e:[2026,6,10],act:'Decoração — Premium Bar e Slice Restaurant'},
+  {sid:'power',  s:[2026,5,1], e:[2026,6,10],act:'Operação de segurança — Bilheteira e acessos'},
+  {sid:'power',  s:[2026,6,11],e:[2026,6,16],act:'Segurança reforçada — Dia 0'},
+  {sid:'power',  s:[2026,6,17],e:[2026,6,26],act:'Operação segurança — live event'},
+  {sid:'power',  s:[2026,6,27],e:[2026,7,31],act:'Segurança desmontagens — Bilheteira e acessos'},
+  {sid:'perimetro',s:[2026,5,1],e:[2026,6,10],act:'Limpeza geral — Recinto'},
+  {sid:'perimetro',s:[2026,6,11],e:[2026,6,16],act:'Limpeza final — preparação Dia 0'},
+  {sid:'perimetro',s:[2026,6,17],e:[2026,6,26],act:'Limpeza diária — Food Court, Slice, Estádio'},
+  {sid:'perimetro',s:[2026,6,27],e:[2026,7,31],act:'Limpeza pós-evento — Recinto'},
+  {sid:'sportradar',s:[2026,6,5],e:[2026,6,10],act:'Montagem LED walls — Estádio'},
+  {sid:'sportradar',s:[2026,6,11],e:[2026,6,15],act:'Montagem LED walls — Smash Area e Food Court'},
+  {sid:'sportradar',s:[2026,6,17],e:[2026,6,26],act:'Operação LED walls — live'},
+  {sid:'bolt6',  s:[2026,6,10],e:[2026,6,15],act:'Instalação câmaras de arbitragem — Estádio'},
+  {sid:'bolt6',  s:[2026,6,17],e:[2026,6,26],act:'Operação câmaras arbitragem — live'},
+  {sid:'emav',   s:[2026,6,10],e:[2026,6,15],act:'Instalação equipamento transmissão TVI — TV Compound'},
+  {sid:'emav',   s:[2026,6,17],e:[2026,6,26],act:'Transmissão TVI — live'},
+  {sid:'niu',    s:[2026,4,21],e:[2026,6,16],act:'Coordenação e supervisão de montagens — Recinto',wd:[1,3]},
+  {sid:'niu',    s:[2026,6,17],e:[2026,6,26],act:'Operação micro diária — Recinto'},
+  {sid:'niu',    s:[2026,6,27],e:[2026,7,31],act:'Coordenação das desmontagens — Recinto'},
 ];
 
 // ── STATE ─────────────────────────────────────────────────────────────────
 let state = {
   page:'dashboard', records:{}, ganttOffset:0, ganttArea:'',
-  schedTab:'7cores', evidence:{}, reportDate: new Date(),
+  schedTab:'oneway', evidence:{}, reportDate: new Date(),
   schedTasks: Object.fromEntries(Object.entries(SCHED_DATA).map(([k,v])=>[k,v.tasks.map(t=>({...t}))])),
 };
 let gestaoExpanded = {};
@@ -1601,7 +1201,7 @@ function navigate(pg){
   document.getElementById('tb-title').textContent=PAGE_TITLES[pg]||pg;
   closeSb();
   if(pg==='dashboard') renderDash();
-  if(pg==='mapa')      {centerOnToday();renderGantt(true);}
+  if(pg==='mapa')      {centerOnToday();renderGantt();}
   if(pg==='registo')   renderReg();
   if(pg==='cronos')    renderCronos();
   if(pg==='gestao')    renderGestao();
@@ -1679,22 +1279,9 @@ function getViewDays(){
 }
 
 function centerOnToday(){
-  // ganttOffset=0 means TODAY is centred (getViewDays builds from TODAY+offset)
   state.ganttOffset=0;
+  renderGantt(true);
 }
-function getSchedAct(sid, d){
-  // Returns ALL scheduled activities for a given supplier and date
-  const ds = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const acts = [];
-  for(const e of SCHED_ENTRIES){
-    if(e.sid !== sid) continue;
-    const s = new Date(e.s[0], e.s[1], e.s[2]).getTime();
-    const en = new Date(e.e[0], e.e[1], e.e[2]).getTime();
-    if(ds >= s && ds <= en && e.act) acts.push(e.act);
-  }
-  return acts.join('\n');
-}
-
 function renderGantt(skipCenter){
   const days=getViewDays();
   const areas=[...new Set(SUPS.map(s=>s.area))];
@@ -1714,18 +1301,16 @@ function renderGantt(skipCenter){
     }).join('')+'</tr>';
     // Activity row - inline editable for admins
     html+='<tr class="g-data"><td class="g-sup-td" style="font-size:10px;color:var(--text3);padding:2px 11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px">Operação</td>'+days.map(d=>{
-      const r=getRec(sup.id,d);const schedActs=getSchedAct(sup.id,d);const act=r.act||schedActs||'';
+      const r=getRec(sup.id,d);const act=r.act||'';
       if(isAdmin()){
         return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" style="padding:2px;vertical-align:top">'+
-          (schedActs?(function(){var ts=schedActs.split('\n').filter(Boolean);var vis=ts.slice(0,2);var ext=ts.length-2;return vis.map(function(t){return'<div style="font-size:8px;border-left:2px solid var(--yellow);padding:1px 5px;margin-bottom:2px;background:rgba(200,164,0,.12);border-radius:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+t+'">'+t+'</div>';}).join('')+(ext>0?'<div style="font-size:8px;color:var(--text3);padding:1px 4px">+'+ext+' mais</div>':'');})())+
-          '<textarea class="g-act-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" placeholder="Nota..." '+
-          'style="width:100%;box-sizing:border-box;font-size:8px;padding:2px 3px;border:1px solid '+(r.act?'var(--yellow)':'rgba(0,0,0,.1)')+';border-radius:3px;background:'+(r.act?'var(--yellow-l)':'transparent')+';color:var(--text);font-family:inherit;resize:none;height:22px;line-height:1.3">'+
-          (r.act||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'+
+          '<textarea class="g-act-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" placeholder="—" '+
+          'style="width:100%;box-sizing:border-box;font-size:9px;padding:3px 4px;border:1px solid '+(act?'var(--yellow)':'var(--border)')+';border-radius:3px;background:'+(act?'var(--yellow-l)':'#fff')+';color:var(--text);font-family:inherit;resize:none;height:72px;line-height:1.4;overflow-y:auto">'+act.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'+
           '</td>';
       }
       const badge=zoneBadge(act);
       return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" data-open="'+sup.id+'||'+d.toISOString()+'" style="padding:4px 5px;vertical-align:top;cursor:pointer">'+
-        (act?'<div style="max-height:80px;overflow-y:auto">'+act.split('\n').filter(Boolean).map(function(t){return'<div style="font-size:8px;display:flex;align-items:center;gap:2px;margin-bottom:1px">'+badge+'<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--text)" title="'+t+'">'+t+'</span></div>';}).join('')+'</div>':'<span style="color:#ddd;font-size:9px">—</span>')+
+        (act?'<div style="display:flex;align-items:flex-start;gap:3px">'+badge+'<div style="font-size:9px;color:var(--text);font-weight:600;white-space:normal;line-height:1.4;word-break:break-word">'+act+'</div></div>':'<span style="color:#ddd;font-size:9px">—</span>')+
         '</td>';
     }).join('')+'</tr>';
     // Attendance row - quick edit for admins
@@ -1860,6 +1445,7 @@ function renderGantt(skipCenter){
 }
 document.getElementById('g-prev').addEventListener('click',()=>{state.ganttOffset=Math.max(0,state.ganttOffset-1);renderGantt(true);});
 document.getElementById('g-next').addEventListener('click',()=>{state.ganttOffset++;renderGantt(true);});
+document.getElementById('g-today').addEventListener('click',()=>{centerOnToday();});
 document.getElementById('g-area').addEventListener('change',e=>{state.ganttArea=e.target.value;renderGantt();});
 document.getElementById('add-sup-btn').addEventListener('click',openAddSup);
 
@@ -2919,24 +2505,12 @@ function _renderUtilizadoresInner(){
   toolsDiv.innerHTML='<div class="card" style="border-left:4px solid #ef4444;margin-top:8px">'+
     '<div class="ch"><div class="ct" style="color:#ef4444"><i class="ti ti-alert-triangle"></i>Ferramentas Admin</div></div>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0">'+
-    '<button id="reset-all-btn" class="btn btn-sm" style="background:#ef4444;color:#fff;margin-right:8px"><i class="ti ti-refresh-alert"></i> RESET TOTAL</button>'+
     '<button id="clear-records-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar registos por dia</button>'+
     '<button id="clear-sups-btn" class="btn btn-out btn-sm" style="color:#ef4444;border-color:#ef4444"><i class="ti ti-trash"></i>Limpar fornecedores Firebase</button>'+
     '</div></div>';
   pgEl.appendChild(toolsDiv);
 
-  const resetBtn=document.getElementById('reset-all-btn');
-  if(resetBtn)resetBtn.addEventListener('click',async()=>{
-    if(!confirm('\u26a0\ufe0f RESET TOTAL\n\nApaga TODOS os registos diários.\nFornecedores e cronograma ficam intactos.\n\nConfirmas?'))return;
-    resetBtn.disabled=true;resetBtn.textContent='A limpar...';
-    try{await fbSet('records',null);}catch(e){}
-    _recCache={};
-    Object.keys(localStorage).filter(k=>k.startsWith('meo_')).forEach(k=>localStorage.removeItem(k));
-    resetBtn.disabled=false;resetBtn.innerHTML='<i class="ti ti-refresh-alert"></i> RESET TOTAL';
-    showToast('\u2705 Reset completo!');
-    renderDash();if(state.page==='mapa')renderGantt(true);if(state.page==='registo')renderReg();
-  });
-  const crBtn=document.getElementById('clear-records-btn');
+  const crBtn = document.getElementById('clear-records-btn');
   if(crBtn) crBtn.addEventListener('click', async()=>{
     // Load all records from Firebase to see which days exist
     crBtn.disabled=true; crBtn.textContent='A carregar dias...';
