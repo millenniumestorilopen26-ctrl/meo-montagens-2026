@@ -1914,6 +1914,18 @@ function renderReg(){
     const sid=p.dataset.sid,att=p.dataset.att;setRec(sid,TODAY,{att});
     document.querySelectorAll('.pill[data-sid="'+sid+'"]').forEach(x=>{x.className='pill'+(x.dataset.att===att?' p-'+att.slice(0,3):'');});
   }));
+  document.querySelectorAll('.task-prng').forEach(inp=>inp.addEventListener('input',e=>{
+    const sid=e.target.dataset.sid;
+    const ti=parseInt(e.target.dataset.ti);
+    const v=parseInt(e.target.value);
+    const rec=getRec(sid,TODAY);
+    const progs=rec.taskProgs||{};
+    progs[ti]=v;
+    // Update display
+    const label=e.target.previousElementSibling;
+    if(label)label.textContent=v+'%';
+    setRec(sid,TODAY,{taskProgs:progs});
+  }));
   document.querySelectorAll('.prng').forEach(inp=>inp.addEventListener('input',e=>{
     const v=parseInt(e.target.value),sid=e.target.dataset.sid;
     setRec(sid,TODAY,{prog:v});const lbl=document.getElementById('pv-'+sid);if(lbl)lbl.textContent=v+'%';
