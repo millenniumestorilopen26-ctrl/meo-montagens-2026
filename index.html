@@ -2918,7 +2918,7 @@ function _renderUtilizadoresInner(){
     showToast('\u2705 Reset completo!');
     renderDash();if(state.page==='mapa')renderGantt(true);if(state.page==='registo')renderReg();
   });
-  'clear-records-btn');
+  const crBtn=document.getElementById('clear-records-btn');
   if(crBtn) crBtn.addEventListener('click', async()=>{
     // Load all records from Firebase to see which days exist
     crBtn.disabled=true; crBtn.textContent='A carregar dias...';
