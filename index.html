@@ -858,16 +858,18 @@ const MSHT  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov'
 const MLONG = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
 const SUPS = [
-  {id:'mbw',        name:'MBW',           area:'Estruturas',   color:'#3b82f6', active:true},
-  {id:'powershield',name:'PowerShield',   area:'Segurança',    color:'#f59e0b', active:true},
-  {id:'irmarfer',   name:'Irmarfer',      area:'Estruturas',   color:'#8b5cf6', active:true},
-  {id:'7cores',     name:'7Cores',        area:'Manutenção',   color:'#ef4444', active:true},
-  {id:'oneway',     name:'One WAY',       area:'AV/Técnico',   color:'#06b6d4', active:true},
-  {id:'tlove',      name:'3Love',         area:'Coordenação',  color:'#dc2626', active:true},
-  {id:'niu',        name:'NIU',           area:'Coordenação',  color:'#FFEC1A', active:true},
-  {id:'cmc',        name:'CMC',           area:'Equipamentos', color:'#a16207', active:true},
-  {id:'moove',      name:'Moove/Festa Aluga', area:'Logística',color:'#34d399', active:true},
-  {id:'mactecnica', name:'Mactecnica',    area:'Técnico',      color:'#7c3aed', active:true},
+  {id:'mbw',        name:'MBW',              area:'Estruturas',    color:'#3b82f6', active:true},
+  {id:'powershield',name:'PowerShield',      area:'Segurança',     color:'#f59e0b', active:true},
+  {id:'irmarfer',   name:'Irmarfer',         area:'Estruturas',    color:'#8b5cf6', active:true},
+  {id:'7cores',     name:'7Cores',           area:'Manutenção',    color:'#ef4444', active:true},
+  {id:'oneway',     name:'One WAY',          area:'AV/Técnico',    color:'#06b6d4', active:true},
+  {id:'tlove',      name:'3Love',            area:'Coordenação',   color:'#dc2626', active:true},
+  {id:'niu',        name:'NIU',              area:'Coordenação',   color:'#FFEC1A', active:true},
+  {id:'cmc',        name:'CMC',              area:'Equipamentos',  color:'#a16207', active:true},
+  {id:'moove',      name:'Moove/Festa Aluga',area:'Logística',     color:'#34d399', active:true},
+  {id:'festaaluga', name:'Festa Aluga',      area:'Decoração',     color:'#f472b6', active:true},
+  {id:'mactecnica', name:'Mactecnica',       area:'Técnico',       color:'#7c3aed', active:true},
+  {id:'metalcario', name:'MetalCario',       area:'Estruturas',    color:'#0369a1', active:true},
 ];
 
 const ZONES = [
@@ -1191,11 +1193,13 @@ const SCHED_DATA = {
   'moove':{label:'Moove/Festa Aluga',tasks:[
     {id:109,task:'Condicionamento piso -1',zone:'Sala de bridge',start:'6 Jul',end:'31 Jul',prog:0,notes:''},
     {id:110,task:'Condicionamento piso -1',zone:'Sala de sócios',start:'6 Jul',end:'31 Jul',prog:0,notes:''},
-    {id:168,task:'Condicionamento piso -2',zone:'Ginásio',start:'13 Jul',end:'29 Jul',prog:0,notes:''},
   ]},
   'niu':{label:'NIU',tasks:[
     {id:111,task:'Estruturas Courts Cobertos',zone:'Fun Center',start:'6 Jul',end:'16 Jul',prog:0,notes:''},
     {id:146,task:'Montagem stand Porsche',zone:'Smash Area',start:'9 Jul',end:'17 Jul',prog:0,notes:''},
+  ]},
+  'festaaluga':{label:'Festa Aluga',tasks:[
+    {id:168,task:'Condicionamento piso -2',zone:'Ginásio',start:'13 Jul',end:'29 Jul',prog:0,notes:''},
   ]},
   'mactecnica':{label:'Mactecnica',tasks:[
     {id:201,task:'Mactecnica',zone:'',start:'14 Jul',end:'14 Jul',prog:0,notes:''},
@@ -1395,7 +1399,7 @@ const SCHED_ENTRIES = [
   {sid:'tlove',s:[2026,6,11],e:[2026,6,17],act:'High Pré-evento'},
   {sid:'tlove',s:[2026,6,11],e:[2026,6,31],act:'Condicionamento piso -2 — Balneários'},
   {sid:'tlove',s:[2026,6,11],e:[2026,6,31],act:'Condicionamento piso 0 — Recepção'},
-  {sid:'moove',s:[2026,6,13],e:[2026,6,29],act:'Condicionamento piso -2 — Ginásio'},
+  {sid:'festaaluga',s:[2026,6,13],e:[2026,6,29],act:'Condicionamento piso -2 — Ginásio'},
   {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'SEGURANÇA — Módulos'},
   {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'VALET — Módulos'},
   {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'BOLT 6 — Módulos'},
