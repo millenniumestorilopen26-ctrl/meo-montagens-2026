@@ -1867,7 +1867,7 @@ document.getElementById('add-sup-btn').addEventListener('click',openAddSup);
 function renderReg(){
   const dt=String(TODAY.getDate()).padStart(2,'0')+' de '+MLONG[TODAY.getMonth()]+' de '+TODAY.getFullYear();
   document.getElementById('reg-date').textContent=dt;
-  document.getElementById('reg-cards').innerHTML=SUPS.filter(s=>s.active||getRec(s.id,TODAY).att||getRec(s.id,TODAY).prog>0).map(sup=>{
+  document.getElementById('reg-cards').innerHTML=SUPS.filter(s=>(s.active&&getSchedAct(s.id,TODAY).length>0)||getRec(s.id,TODAY).att||getRec(s.id,TODAY).prog>0||getRec(s.id,TODAY).obs).map(sup=>{
     const r=getRec(sup.id,TODAY);
     return '<div class="rc"><div class="rc-head"><div class="sdot" style="background:'+sup.color+';width:11px;height:11px"></div><div class="rc-name">'+sup.name+'</div><div class="rc-area">'+sup.area+'</div></div>'+
       '<div style="margin-bottom:11px"><label class="flbl">Assiduidade</label><div class="pills">'+
