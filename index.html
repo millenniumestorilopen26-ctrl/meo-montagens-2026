@@ -1683,15 +1683,16 @@ function centerOnToday(){
   state.ganttOffset=0;
 }
 function getSchedAct(sid, d){
-  // Returns scheduled activity from SCHED_ENTRIES for a given supplier and date
+  // Returns ALL scheduled activities for a given supplier and date
   const ds = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const acts = [];
   for(const e of SCHED_ENTRIES){
     if(e.sid !== sid) continue;
     const s = new Date(e.s[0], e.s[1], e.s[2]).getTime();
     const en = new Date(e.e[0], e.e[1], e.e[2]).getTime();
-    if(ds >= s && ds <= en) return e.act||'';
+    if(ds >= s && ds <= en && e.act) acts.push(e.act);
   }
-  return '';
+  return acts.join('\n');
 }
 
 function renderGantt(skipCenter){
