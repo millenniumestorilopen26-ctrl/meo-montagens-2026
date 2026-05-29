@@ -414,165 +414,184 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
       <div class="card" style="margin-bottom:12px">
         <div class="ch"><div class="ct"><i class="ti ti-map-2"></i>Mapa do Recinto — Millennium Estoril Open 2026</div><span style="font-size:11px;color:var(--text3)">Clica numa zona para ver detalhes</span></div>
         <div style="width:100%;overflow-x:auto;border-radius:var(--r);background:#e8e4dc;border:1px solid var(--border)">
-<svg id="venueSvg" viewBox="0 0 900 700" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">
-<defs>
-  <filter id="vshadow"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.18"/></filter>
-</defs>
-<!-- Background -->
-<rect width="900" height="700" fill="#e8e4dc"/>
-<!-- Road bottom -->
-<rect x="0" y="660" width="900" height="40" fill="#d0ccc4"/>
-<text font-size="11" fill="#888" text-anchor="middle" x="450" y="678">Parque Staff / Acesso Serviço</text>
+<svg id="venueSvg" viewBox="0 0 900 720" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto;font-family:inherit">
+<defs><filter id="sh" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/></filter></defs>
+
+<!-- Background terrain -->
+<rect width="900" height="720" fill="#ddd8ce"/>
+
+<!-- Main venue boundary - irregular polygon matching real outline -->
+<polygon points="100,60 680,60 740,90 760,140 760,620 680,660 120,660 80,620 60,400 80,200 100,60" fill="#ede9e2" stroke="#bbb5a8" stroke-width="2"/>
+
+<!-- Road top -->
+<rect x="0" y="0" width="900" height="58" fill="#c8c2b4"/>
+<text font-size="10" fill="#888" x="380" y="35">Rua / Acesso Público</text>
+
+<!-- Road right -->
+<rect x="762" y="0" width="138" height="720" fill="#c8c2b4"/>
+
 <!-- Parque Valet right -->
-<rect x="780" y="40" width="110" height="580" rx="6" fill="#cce5a8" stroke="#8fba6a" stroke-width="1"/>
-<text font-size="10" fill="#3d6b1a" text-anchor="middle" x="835" y="330" writing-mode="tb-rl">Parque Valet</text>
+<rect x="772" y="70" width="118" height="260" rx="4" fill="#c5dfa8" stroke="#8ab86a" stroke-width="1"/>
+<text font-size="9" fill="#3d6b1a" text-anchor="middle" x="831" y="200" writing-mode="tb-rl">Parque Valet</text>
 
-<!-- 01 SLICE -->
-<g class="z" data-zone="01" data-name="Slice" data-color="#c8a400" data-cat="Hospitalidade" onclick="zoneClick('01','Slice','#c8a400','Hospitalidade')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="10" y="40" width="200" height="100" rx="6" fill="#c8a400" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="110" y="83">/01</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="110" y="100">SLICE</text>
-  <text font-size="9" fill="rgba(255,255,255,.8)" text-anchor="middle" x="110" y="116">Hospitalidade</text>
+<!-- 19 ESCOLA - exterior right -->
+<g class="z" data-zone="19" data-name="Escola" data-color="#0f766e" data-cat="Exterior" onclick="zoneClick('19','Escola','#0f766e','Exterior')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="772" y="345" width="118" height="140" rx="4" fill="#0f766e" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="831" y="405">/19</text>
+  <text font-size="11" font-weight="800" fill="#fff" text-anchor="middle" x="831" y="422">ESCOLA</text>
 </g>
 
-<!-- 02 COZINHA -->
-<g class="z" data-zone="02" data-name="Cozinha" data-color="#e07b39" data-cat="Operações" onclick="zoneClick('02','Cozinha','#e07b39','Operações')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="10" y="150" width="200" height="90" rx="6" fill="#e07b39" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="110" y="188">/02</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="110" y="205">COZINHA</text>
+<!-- Parque Staff bottom -->
+<rect x="0" y="666" width="900" height="54" fill="#c8c2b4"/>
+<text font-size="10" fill="#888" text-anchor="middle" x="400" y="690">Parque Staff</text>
+
+<!-- 15 BILHETEIRA - entrance bottom left -->
+<g class="z" data-zone="15" data-name="Bilheteira e Entrada Principal" data-color="#be185d" data-cat="Acessos" onclick="zoneClick('15','Bilheteira e Entrada Principal','#be185d','Acessos')" style="cursor:pointer" filter="url(#sh)">
+  <polygon points="80,580 200,580 200,660 80,660 60,630 60,600" fill="#be185d" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="135" y="612">/15</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="135" y="628">BILHETEIRA</text>
+  <text font-size="8" fill="rgba(255,255,255,.85)" text-anchor="middle" x="135" y="643">Entrada Principal</text>
 </g>
 
-<!-- 04 SLICE RESTAURANT -->
-<g class="z" data-zone="04" data-name="Slice Restaurant" data-color="#d4820a" data-cat="Hospitalidade" onclick="zoneClick('04','Slice Restaurant','#d4820a','Hospitalidade')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="10" y="250" width="200" height="90" rx="6" fill="#d4820a" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="110" y="288">/04</text>
-  <text font-size="12" font-weight="800" fill="#fff" text-anchor="middle" x="110" y="305">SLICE RESTAURANT</text>
+<!-- 01 SLICE - top left building -->
+<g class="z" data-zone="01" data-name="Slice" data-color="#c8a400" data-cat="Hospitalidade" onclick="zoneClick('01','Slice','#c8a400','Hospitalidade')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="85" y="65" width="175" height="95" rx="4" fill="#c8a400" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="172" y="105">/01  SLICE</text>
+  <text font-size="9" fill="rgba(255,255,255,.85)" text-anchor="middle" x="172" y="122">Hospitalidade</text>
+</g>
+
+<!-- 02 COZINHA - top left, above restaurant -->
+<g class="z" data-zone="02" data-name="Cozinha" data-color="#e07b39" data-cat="Operações" onclick="zoneClick('02','Cozinha','#e07b39','Operações')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="85" y="170" width="175" height="80" rx="4" fill="#e07b39" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="172" y="215">/02  COZINHA</text>
+</g>
+
+<!-- 04 SL RESTAURANT - left side centre -->
+<g class="z" data-zone="04" data-name="Slice Restaurant" data-color="#d4820a" data-cat="Hospitalidade" onclick="zoneClick('04','Slice Restaurant','#d4820a','Hospitalidade')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="85" y="260" width="175" height="90" rx="4" fill="#d4820a" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="172" y="298">/04</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="172" y="314">SLICE RESTAURANT</text>
 </g>
 
 <!-- 20 PREMIUM BAR -->
-<g class="z" data-zone="20" data-name="Premium Bar" data-color="#9b7ec8" data-cat="Hospitalidade" onclick="zoneClick('20','Premium Bar','#9b7ec8','Hospitalidade')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="10" y="350" width="200" height="80" rx="6" fill="#9b7ec8" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="110" y="383">/20</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="110" y="400">PREMIUM BAR</text>
+<g class="z" data-zone="20" data-name="Premium Bar" data-color="#9b7ec8" data-cat="Hospitalidade" onclick="zoneClick('20','Premium Bar','#9b7ec8','Hospitalidade')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="85" y="360" width="120" height="70" rx="4" fill="#9b7ec8" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="145" y="390">/20</text>
+  <text font-size="9" font-weight="800" fill="#fff" text-anchor="middle" x="145" y="406">PREMIUM BAR</text>
 </g>
 
 <!-- 21 CASCAIS TERRACE -->
-<g class="z" data-zone="21" data-name="CASCAIS TERRACE" data-color="#0ea5e9" data-cat="Hospitalidade" onclick="zoneClick('21','CASCAIS TERRACE','#0ea5e9','Hospitalidade')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="10" y="440" width="200" height="80" rx="6" fill="#0ea5e9" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="110" y="473">/21</text>
-  <text font-size="12" font-weight="800" fill="#fff" text-anchor="middle" x="110" y="490">CASCAIS TERRACE</text>
+<g class="z" data-zone="21" data-name="CASCAIS TERRACE" data-color="#0ea5e9" data-cat="Hospitalidade" onclick="zoneClick('21','CASCAIS TERRACE','#0ea5e9','Hospitalidade')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="215" y="360" width="130" height="70" rx="4" fill="#0ea5e9" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="280" y="390">/21</text>
+  <text font-size="9" font-weight="800" fill="#fff" text-anchor="middle" x="280" y="406">CASCAIS TERRACE</text>
 </g>
 
-<!-- 05 ESTÁDIO - centre large -->
-<g class="z" data-zone="05" data-name="Estádio" data-color="#1a6bb5" data-cat="Courts" onclick="zoneClick('05','Estádio','#1a6bb5','Courts')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="225" y="40" width="310" height="260" rx="8" fill="#1a6bb5" stroke="#fff" stroke-width="2"/>
-  <text font-size="14" font-weight="700" fill="#fff" text-anchor="middle" x="380" y="145">/05</text>
-  <text font-size="18" font-weight="800" fill="#fff" text-anchor="middle" x="380" y="170">ESTÁDIO</text>
-  <text font-size="11" fill="rgba(255,255,255,.8)" text-anchor="middle" x="380" y="192">Millennium</text>
+<!-- 05 ESTÁDIO - large centre court (main stadium) -->
+<g class="z" data-zone="05" data-name="Estádio" data-color="#1a6bb5" data-cat="Courts" onclick="zoneClick('05','Estádio','#1a6bb5','Courts')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="270" y="65" width="310" height="285" rx="6" fill="#1a6bb5" stroke="#fff" stroke-width="2"/>
+  <!-- court markings -->
+  <rect x="290" y="85" width="130" height="90" rx="2" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <rect x="435" y="85" width="130" height="90" rx="2" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <rect x="290" y="190" width="275" height="140" rx="2" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+  <text font-size="13" font-weight="700" fill="#fff" text-anchor="middle" x="425" y="230">/05</text>
+  <text font-size="18" font-weight="800" fill="#fff" text-anchor="middle" x="425" y="254">ESTÁDIO</text>
+  <text font-size="10" fill="rgba(255,255,255,.8)" text-anchor="middle" x="425" y="273">Millennium</text>
+</g>
+
+<!-- 03 PLAYERS - top right courts -->
+<g class="z" data-zone="03" data-name="Players" data-color="#2a9e5c" data-cat="Courts" onclick="zoneClick('03','Players','#2a9e5c','Courts')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="592" y="65" width="160" height="175" rx="5" fill="#2a9e5c" stroke="#fff" stroke-width="1.5"/>
   <!-- court lines -->
-  <rect x="255" y="65" width="120" height="80" rx="2" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
-  <rect x="390" y="65" width="120" height="80" rx="2" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <rect x="605" y="78" width="60" height="75" rx="1" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <rect x="675" y="78" width="65" height="75" rx="1" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="672" y="183">/03  PLAYERS</text>
 </g>
 
-<!-- 03 PLAYERS -->
-<g class="z" data-zone="03" data-name="Players" data-color="#2a9e5c" data-cat="Courts" onclick="zoneClick('03','Players','#2a9e5c','Courts')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="548" y="40" width="220" height="120" rx="6" fill="#2a9e5c" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="658" y="93">/03</text>
-  <text font-size="14" font-weight="800" fill="#fff" text-anchor="middle" x="658" y="113">PLAYERS</text>
+<!-- 09 AREA TECNICA - right of estádio -->
+<g class="z" data-zone="09" data-name="Area Tecnica" data-color="#6b7280" data-cat="Técnico" onclick="zoneClick('09','Area Tecnica','#6b7280','Técnico')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="592" y="252" width="160" height="100" rx="5" fill="#6b7280" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="672" y="295">/09</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="672" y="312">AREA TÉCNICA</text>
 </g>
 
-<!-- 09 AREA TECNICA -->
-<g class="z" data-zone="09" data-name="Area Tecnica" data-color="#6b7280" data-cat="Técnico" onclick="zoneClick('09','Area Tecnica','#6b7280','Técnico')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="548" y="175" width="220" height="125" rx="6" fill="#6b7280" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="658" y="225">/09</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="658" y="245">AREA TÉCNICA</text>
+<!-- 08 TV COMPOUND - right -->
+<g class="z" data-zone="08" data-name="TV Compound" data-color="#374151" data-cat="Media" onclick="zoneClick('08','TV Compound','#374151','Media')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="592" y="365" width="160" height="90" rx="5" fill="#374151" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="672" y="403">/08</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="672" y="419">TV COMPOUND</text>
 </g>
 
-<!-- 06 SMASH AREA -->
-<g class="z" data-zone="06" data-name="Smash Area" data-color="#c8400a" data-cat="Actividades" onclick="zoneClick('06','Smash Area','#c8400a','Actividades')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="380" y="315" width="185" height="120" rx="6" fill="#c8400a" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="472" y="365">/06</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="472" y="383">SMASH AREA</text>
+<!-- 06 SMASH AREA - right centre -->
+<g class="z" data-zone="06" data-name="Smash Area" data-color="#c8400a" data-cat="Actividades" onclick="zoneClick('06','Smash Area','#c8400a','Actividades')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="592" y="468" width="160" height="90" rx="5" fill="#c8400a" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="672" y="506">/06</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="672" y="522">SMASH AREA</text>
 </g>
 
-<!-- 08 TV COMPOUND -->
-<g class="z" data-zone="08" data-name="TV Compound" data-color="#374151" data-cat="Media" onclick="zoneClick('08','TV Compound','#374151','Media')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="548" y="315" width="220" height="120" rx="6" fill="#374151" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="658" y="365">/08</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="658" y="383">TV COMPOUND</text>
+<!-- 11 FUN CENTER - large centre bottom hall -->
+<g class="z" data-zone="11" data-name="Fun Center" data-color="#7c3aed" data-cat="Actividades" onclick="zoneClick('11','Fun Center','#7c3aed','Actividades')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="270" y="365" width="310" height="195" rx="6" fill="#7c3aed" stroke="#fff" stroke-width="2"/>
+  <text font-size="13" font-weight="700" fill="#fff" text-anchor="middle" x="425" y="445">/11</text>
+  <text font-size="18" font-weight="800" fill="#fff" text-anchor="middle" x="425" y="470">FUN CENTER</text>
 </g>
 
-<!-- 07 FOOD COURT -->
-<g class="z" data-zone="07" data-name="Food Court" data-color="#b85c00" data-cat="Restauração" onclick="zoneClick('07','Food Court','#b85c00','Restauração')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="380" y="450" width="185" height="90" rx="6" fill="#b85c00" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="472" y="488">/07</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="472" y="505">FOOD COURT</text>
+<!-- 07 FOOD COURT - between fun center and warehouse -->
+<g class="z" data-zone="07" data-name="Food Court" data-color="#b85c00" data-cat="Restauração" onclick="zoneClick('07','Food Court','#b85c00','Restauração')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="270" y="570" width="145" height="80" rx="5" fill="#b85c00" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="342" y="604">/07</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="342" y="620">FOOD COURT</text>
 </g>
 
-<!-- 11 FUN CENTER -->
-<g class="z" data-zone="11" data-name="Fun Center" data-color="#7c3aed" data-cat="Actividades" onclick="zoneClick('11','Fun Center','#7c3aed','Actividades')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="225" y="315" width="145" height="225" rx="6" fill="#7c3aed" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="297" y="408">/11</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="297" y="428">FUN CENTER</text>
+<!-- 14 WAREHOUSE AREA - bottom centre -->
+<g class="z" data-zone="14" data-name="Warehouse Area" data-color="#374151" data-cat="Logística" onclick="zoneClick('14','Warehouse Area','#374151','Logística')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="425" y="570" width="155" height="80" rx="5" fill="#4b5563" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="502" y="604">/14</text>
+  <text font-size="9" font-weight="800" fill="#fff" text-anchor="middle" x="502" y="620">WAREHOUSE AREA</text>
 </g>
 
 <!-- 22 KIDS PLACE -->
-<g class="z" data-zone="22" data-name="KIDS PLACE" data-color="#f59e0b" data-cat="Actividades" onclick="zoneClick('22','KIDS PLACE','#f59e0b','Actividades')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="548" y="450" width="220" height="90" rx="6" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="658" y="488">/22</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="658" y="505">KIDS PLACE</text>
+<g class="z" data-zone="22" data-name="KIDS PLACE" data-color="#f59e0b" data-cat="Actividades" onclick="zoneClick('22','KIDS PLACE','#f59e0b','Actividades')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="592" y="570" width="160" height="80" rx="5" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="672" y="604">/22</text>
+  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="672" y="620">KIDS PLACE</text>
 </g>
 
-<!-- 14 WAREHOUSE AREA -->
-<g class="z" data-zone="14" data-name="Warehouse Area" data-color="#374151" data-cat="Logística" onclick="zoneClick('14','Warehouse Area','#374151','Logística')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="225" y="555" width="390" height="90" rx="6" fill="#374151" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="420" y="594">/14</text>
-  <text font-size="13" font-weight="800" fill="#fff" text-anchor="middle" x="420" y="612">WAREHOUSE AREA</text>
+<!-- 16 PADEL - bottom left courts -->
+<g class="z" data-zone="16" data-name="Padel" data-color="#059669" data-cat="Courts" onclick="zoneClick('16','Padel','#059669','Courts')" style="cursor:pointer" filter="url(#sh)">
+  <rect x="85" y="440" width="175" height="130" rx="5" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+  <!-- padel court lines -->
+  <rect x="100" y="455" width="65" height="100" rx="1" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <rect x="177" y="455" width="65" height="100" rx="1" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="172" y="513">/16  PADEL</text>
 </g>
 
-<!-- 15 BILHETEIRA -->
-<g class="z" data-zone="15" data-name="Bilheteira e Entrada Principal" data-color="#be185d" data-cat="Acessos" onclick="zoneClick('15','Bilheteira e Entrada Principal','#be185d','Acessos')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="628" y="555" width="140" height="90" rx="6" fill="#be185d" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="698" y="590">/15</text>
-  <text font-size="10" font-weight="800" fill="#fff" text-anchor="middle" x="698" y="606">BILHETEIRA</text>
-  <text font-size="9" fill="rgba(255,255,255,.8)" text-anchor="middle" x="698" y="620">Entrada Principal</text>
-</g>
-
-<!-- 16 PADEL -->
-<g class="z" data-zone="16" data-name="Padel" data-color="#059669" data-cat="Courts" onclick="zoneClick('16','Padel','#059669','Courts')" style="cursor:pointer" filter="url(#vshadow)">
-  <rect x="10" y="535" width="200" height="80" rx="6" fill="#059669" stroke="#fff" stroke-width="1.5"/>
-  <text font-size="11" font-weight="700" fill="#fff" text-anchor="middle" x="110" y="568">/16</text>
-  <text font-size="14" font-weight="800" fill="#fff" text-anchor="middle" x="110" y="585">PADEL</text>
-</g>
-
-<!-- 17 COURT CASCAIS (external) -->
+<!-- 17 COURT CASCAIS - top right exterior -->
 <g class="z" data-zone="17" data-name="Court Cascais" data-color="#2a9e5c" data-cat="Courts" onclick="zoneClick('17','Court Cascais','#2a9e5c','Courts')" style="cursor:pointer">
-  <rect x="820" y="40" width="70" height="60" rx="4" fill="#2a9e5c" stroke="#fff" stroke-width="1"/>
-  <text font-size="8" font-weight="700" fill="#fff" text-anchor="middle" x="855" y="63">/17</text>
-  <text font-size="8" font-weight="800" fill="#fff" text-anchor="middle" x="855" y="76">COURT</text>
-  <text font-size="8" fill="rgba(255,255,255,.9)" text-anchor="middle" x="855" y="88">CASCAIS</text>
+  <rect x="772" y="500" width="118" height="80" rx="4" fill="#2a9e5c" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="831" y="532">/17</text>
+  <text font-size="9" font-weight="800" fill="#fff" text-anchor="middle" x="831" y="548">COURT CASCAIS</text>
 </g>
 
-<!-- 18 COURT CTE (external) -->
+<!-- 18 COURT CTE - exterior -->
 <g class="z" data-zone="18" data-name="Court CTE" data-color="#1a7a9e" data-cat="Courts" onclick="zoneClick('18','Court CTE','#1a7a9e','Courts')" style="cursor:pointer">
-  <rect x="820" y="115" width="70" height="60" rx="4" fill="#1a7a9e" stroke="#fff" stroke-width="1"/>
-  <text font-size="8" font-weight="700" fill="#fff" text-anchor="middle" x="855" y="138">/18</text>
-  <text font-size="8" font-weight="800" fill="#fff" text-anchor="middle" x="855" y="151">COURT</text>
-  <text font-size="8" fill="rgba(255,255,255,.9)" text-anchor="middle" x="855" y="163">CTE</text>
+  <rect x="772" y="592" width="118" height="65" rx="4" fill="#1a7a9e" stroke="#fff" stroke-width="1.5"/>
+  <text font-size="10" font-weight="700" fill="#fff" text-anchor="middle" x="831" y="620">/18  COURT CTE</text>
 </g>
 
-<!-- 19 ESCOLA (external) -->
-<g class="z" data-zone="19" data-name="Escola" data-color="#0f766e" data-cat="Exterior" onclick="zoneClick('19','Escola','#0f766e','Exterior')" style="cursor:pointer">
-  <rect x="820" y="190" width="70" height="60" rx="4" fill="#0f766e" stroke="#fff" stroke-width="1"/>
-  <text font-size="8" font-weight="700" fill="#fff" text-anchor="middle" x="855" y="213">/19</text>
-  <text font-size="9" font-weight="800" fill="#fff" text-anchor="middle" x="855" y="228">ESCOLA</text>
+<!-- North arrow -->
+<g transform="translate(50,630)">
+  <circle r="18" fill="rgba(255,255,255,.5)" stroke="#999" stroke-width="1"/>
+  <text font-size="11" font-weight="700" fill="#333" text-anchor="middle" y="-4">N</text>
+  <polygon points="0,-14 4,-5 0,-9 -4,-5" fill="#333"/>
 </g>
 
-<!-- NORTH indicator -->
-<g transform="translate(860,620)">
-  <circle r="18" fill="rgba(0,0,0,.08)" stroke="rgba(0,0,0,.15)" stroke-width="1"/>
-  <text font-size="12" font-weight="700" fill="#444" text-anchor="middle" y="-5">N</text>
-  <path d="M0,-14 L4,-4 L0,-8 L-4,-4 Z" fill="#444"/>
+<!-- Scale bar -->
+<g transform="translate(650,695)">
+  <line x1="0" y1="0" x2="100" y2="0" stroke="#666" stroke-width="2"/>
+  <line x1="0" y1="-4" x2="0" y2="4" stroke="#666" stroke-width="1.5"/>
+  <line x1="100" y1="-4" x2="100" y2="4" stroke="#666" stroke-width="1.5"/>
+  <text font-size="9" fill="#666" text-anchor="middle" y="-8" x="50">≈ 100m</text>
 </g>
 </svg>
         </div>
