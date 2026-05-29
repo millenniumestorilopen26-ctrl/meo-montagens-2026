@@ -138,7 +138,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
 .ph-line{width:2px;flex:1;background:#e8e8e8;margin-top:4px;min-height:14px}
 
 /* ── GANTT ───────────────────────────────────────── */
-.gc{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.gc{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;position:sticky;top:0;z-index:30;background:var(--bg);padding:10px 0 8px;margin-top:-4px}
 .gbtn{padding:7px 13px;border:2px solid var(--dark);border-radius:var(--r);background:var(--white);cursor:pointer;font-size:12px;color:var(--dark);font-family:inherit;font-weight:800;transition:all .15s;text-transform:uppercase;letter-spacing:.3px}
 .gbtn:hover{background:var(--yellow);border-color:var(--yellow)}
 .gsel{padding:7px 10px;border:2px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text);background:var(--white);font-family:inherit;font-weight:700}
@@ -384,7 +384,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;ba
   </div>
   <div class="content">
     <div class="pg on" id="pg-dashboard"></div>
-    <div class="pg" id="pg-mapa">
+    <div class="pg" id="pg-mapa" style="overflow-y:auto;">
       <div class="gc">
         <button class="gbtn" id="g-prev"><i class="ti ti-chevron-left"></i></button>
         <button class="gbtn" id="g-today" style="font-size:11px;font-weight:800;padding:4px 10px;background:var(--yellow);color:#000;border-color:var(--yellow)">HOJE</button>
