@@ -1885,6 +1885,9 @@ function renderReg(){
             '<div style="display:flex;align-items:center;gap:8px">'+
             '<span style="font-size:10px;font-weight:700;min-width:28px">'+p+'%</span>'+
             '<input type="range" class="task-prng" min="0" max="100" step="5" value="'+p+'" data-sid="'+sup.id+'" data-ti="'+i+'" style="flex:1">'+
+            '</div>'+
+            '<div style="height:5px;background:#e5e7eb;border-radius:3px;margin-top:3px">'+
+            '<div class="task-pbar-fill" style="height:100%;width:'+p+'%;background:'+sup.color+';border-radius:3px;transition:width .2s"></div>'+
             '</div></div>';
           }).join('')+'</div>';
         } else {
