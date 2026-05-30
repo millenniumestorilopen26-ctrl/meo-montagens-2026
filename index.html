@@ -1915,7 +1915,11 @@ function renderReg(){
       '<button class="rc-clear-btn" data-sid="'+sup.id+'" style="background:none;border:1px solid rgba(255,80,80,.3);color:rgba(255,80,80,.6);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit">🗑 Limpar registo</button>'+
       '</div></div></div>';
   }).join('');  document.querySelectorAll('.pill[data-att]').forEach(p=>p.addEventListener('click',()=>{
-    const sid=p.dataset.sid,att=p.dataset.att;setRec(sid,TODAY,{att});
+    const sid=p.dataset.sid,att=p.dataset.att;
+    // Autosave all text fields before updating
+    document.querySelectorAll('.ainp').forEach(i=>{if(i.value!==undefined)setRec(i.dataset.sid,TODAY,{act:i.value});});
+    document.querySelectorAll('.oinp').forEach(i=>{if(i.value!==undefined)setRec(i.dataset.sid,TODAY,{obs:i.value});});
+    setRec(sid,TODAY,{att});
     document.querySelectorAll('.pill[data-sid="'+sid+'"]').forEach(x=>{x.className='pill'+(x.dataset.att===att?' p-'+att.slice(0,3):'');});
   }));
   document.querySelectorAll('.task-prng').forEach(inp=>{
