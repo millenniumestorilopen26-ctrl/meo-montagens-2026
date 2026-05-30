@@ -1627,45 +1627,139 @@ document.querySelectorAll('.sb-btn,.bn-btn').forEach(b=>b.addEventListener('clic
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
 function renderDash(){
-  const sups=SUPS.filter(s=>s.active);
-  const recs=sups.map(s=>({...getRec(s.id,TODAY),s}));
-  const pr=recs.filter(r=>r.att==='presente').length;
-  const pa=recs.filter(r=>r.att==='parcial').length;
-  const ab=recs.filter(r=>r.att==='ausente').length;
-  const avg=Math.round(recs.reduce((a,r)=>a+r.prog,0)/sups.length);
-  const crits=state.alerts?state.alerts.filter(a=>a.level==='ALTO').length:ALERTS.filter(a=>a.level==='ALTO').length;
-  const ab2=document.getElementById('alert-badge');
+  const sups = SUPS.filter(s=>s.active);
+  const recs = sups.map(s=>({...getRec(s.id,TODAY), s}));
+  const pr  = recs.filter(r=>r.att==='presente').length;
+  const pa  = recs.filter(r=>r.att==='parcial').length;
+  const ab  = recs.filter(r=>r.att==='ausente').length;
+  const avg = Math.round(recs.reduce((a,r)=>a+r.prog,0)/sups.length);
+
+  // ── DYNAMIC ALERTS based on real data ─────────────────────────────────
+  const dynAlerts = [];
+  const todayMs = new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()).getTime();
+
+  sups.forEach(s=>{
+    const tasks = getSchedAct(s.id, TODAY).split('\n').filter(Boolean);
+    const rec   = getRec(s.id, TODAY);
+    const progs = rec.taskProgs || {};
+    const hasTasks = tasks.length > 0;
+
+    // 1. Absent supplier with tasks today
+    if(hasTasks && rec.att==='ausente'){
+      dynAlerts.push({level:'ALTO', sup:s.name, zone:'', msg:'Ausente — '+tasks[0].split('—')[0].trim(), time:''});
+    }
+    // 2. Has tasks today but no attendance filled yet (after 9am)
+    const hour = TODAY.getHours();
+    if(hasTasks && !rec.att && hour >= 9){
+      dynAlerts.push({level:'MÉDIO', sup:s.name, zone:'', msg:'Sem registo de assiduidade', time:''});
+    }
+    // 3. Task started but 0% progress (after 10am)
+    if(hasTasks && hour >= 10){
+      tasks.forEach((t,i)=>{
+        const p = progs[i] || rec.prog || 0;
+        if(p === 0){
+          dynAlerts.push({level:'BAIXO', sup:s.name, zone:'', msg:'Progresso 0% — '+t.split('—')[0].trim(), time:''});
+        }
+      });
+    }
+    // 4. Check zone conflicts: multiple suppliers in same zone today
+    if(hasTasks){
+      tasks.forEach(t=>{
+        const zone = t.includes('—') ? t.split('—')[1].trim() : '';
+        if(!zone) return;
+        sups.forEach(s2=>{
+          if(s2.id === s.id) return;
+          const tasks2 = getSchedAct(s2.id, TODAY).split('\n').filter(Boolean);
+          tasks2.forEach(t2=>{
+            const zone2 = t2.includes('—') ? t2.split('—')[1].trim() : '';
+            if(zone2 && zone2 === zone){
+              // Only add once per pair
+              const key = [s.id,s2.id].sort().join('-')+'|'+zone;
+              if(!dynAlerts.find(a=>a._key===key)){
+                dynAlerts.push({level:'MÉDIO', sup:s.name+' + '+s2.name, zone:zone, msg:'Partilham zona: '+zone, time:'', _key:key});
+              }
+            }
+          });
+        });
+      });
+    }
+  });
+
+  const crits = dynAlerts.filter(a=>a.level==='ALTO').length;
+  const ab2 = document.getElementById('alert-badge');
   if(ab2){ab2.textContent=crits?crits+' alertas críticos':'';ab2.style.display=crits?'':'none';}
-  const tb=document.getElementById('today-badge');
-  if(tb)tb.textContent=String(TODAY.getDate()).padStart(2,'0')+' '+MSHT[TODAY.getMonth()]+' '+TODAY.getFullYear();
-  document.getElementById('pg-dashboard').innerHTML=
+  const tb = document.getElementById('today-badge');
+  if(tb) tb.textContent=String(TODAY.getDate()).padStart(2,'0')+' '+MSHT[TODAY.getMonth()]+' '+TODAY.getFullYear();
+
+  // ── FORNECEDORES HOJE (only with tasks) ────────────────────────────────
+  const supsHoje = sups.filter(s=>getSchedAct(s.id,TODAY).length>0);
+
+  const lvlColor = {ALTO:'#ef4444', MÉDIO:'#f59e0b', BAIXO:'#3b82f6'};
+
+  document.getElementById('pg-dashboard').innerHTML =
+    // KPI row
     '<div class="kpi-row">'+
     '<div class="kpi"><div class="kpi-lbl">Progresso Médio</div><div class="kpi-val" style="color:var(--terra)">'+avg+'%</div><div class="kpi-sub">todos os fornecedores</div></div>'+
     '<div class="kpi"><div class="kpi-lbl">Presentes</div><div class="kpi-val" style="color:#1a9e4a">'+pr+'</div><div class="kpi-sub">de '+sups.length+' activos</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Parcial / Ausente</div><div class="kpi-val" style="color:#d97706">'+(pa+ab)+'</div><div class="kpi-sub">'+ab+' ausentes</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Alertas Críticos</div><div class="kpi-val" style="color:#e02020">'+crits+'</div><div class="kpi-sub">requerem atenção</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Parcial / Ausente</div><div class="kpi-val" style="color:#e07b39">'+(pa+ab)+'</div><div class="kpi-sub">'+(ab>0?ab+' ausentes':'0 ausentes')+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Alertas Críticos</div><div class="kpi-val" style="color:#ef4444">'+crits+'</div><div class="kpi-sub">requerem atenção</div></div>'+
     '</div>'+
-    '<div class="two-col">'+
-    '<div>'+
+
+    // Two column layout
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">'+
+
+    // LEFT: Alerts
     '<div class="card">'+
     '<div class="ch"><div class="ct"><i class="ti ti-alert-triangle"></i>Alertas do Dia</div></div>'+
-    ALERTS.map(a=>'<div class="al-item"><span class="al-lv lv-'+(a.level==='ALTO'?'alto':a.level==='MÉDIO'?'medio':'baixo')+'">'+a.level+'</span><div style="flex:1"><div style="font-size:13px;font-weight:700">'+a.sup+(a.zone?' · <span style="color:var(--text3);font-weight:400">'+a.zone+'</span>':'')+'</div><div style="font-size:11px;color:var(--text3)">'+a.msg+'</div></div><div style="font-size:10px;color:#ccc">'+a.time+'</div></div>').join('')+
+    (dynAlerts.length === 0 ?
+      '<div style="text-align:center;padding:24px;color:var(--text3)"><i class="ti ti-circle-check" style="font-size:28px;color:#1a9e4a"></i><div style="margin-top:8px;font-size:13px">Sem alertas activos</div></div>' :
+      dynAlerts.slice(0,8).map(a=>
+        '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+        '<span style="background:'+lvlColor[a.level]+';color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;flex-shrink:0;margin-top:1px">'+a.level+'</span>'+
+        '<div><div style="font-size:12px;font-weight:700">'+a.sup+(a.zone?' · <span style=\"color:var(--text3)\">'+a.zone+'</span>':'')+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-top:1px">'+a.msg+'</div></div>'+
+        '</div>'
+      ).join('')
+    )+
     '</div>'+
-    '<div class="card">'+
-    '<div class="ch"><div class="ct"><i class="ti ti-timeline"></i>Fases do Evento</div></div>'+
-    PHASES.map((p,i)=>'<div class="ph-item"><div class="ph-dc"><div class="ph-dot" style="background:'+p.color+'"></div>'+(i<PHASES.length-1?'<div class="ph-line"></div>':'')+'</div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:2px">'+p.date+'</div><div style="font-size:13px;font-weight:700">'+p.title+'</div><div style="font-size:11px;color:var(--text3);margin-top:1px">'+p.body+'</div></div></div>').join('')+
-    '</div>'+
-    '</div>'+
+
+    // RIGHT: Fornecedores hoje
     '<div class="card">'+
     '<div class="ch"><div class="ct"><i class="ti ti-users"></i>Fornecedores Hoje</div></div>'+
-    recs.map(r=>{
-      const ac=r.att==='presente'?'#1a9e4a':r.att==='parcial'?'#d97706':r.att?'#e02020':'#e0e0e0';
-      return'<div class="sup-row"><div class="sdot" style="background:'+r.s.color+'"></div><div style="flex:1;font-size:12px;font-weight:600">'+r.s.name+'</div><div style="font-size:10px;color:var(--text3);width:70px">'+r.s.area+'</div><div class="pbar"><div class="pfill" style="width:'+r.prog+'%;background:'+pColor(r.prog)+'"></div></div><div style="font-size:11px;width:28px;text-align:right;color:'+pColor(r.prog)+';font-weight:700">'+r.prog+'%</div><div style="width:7px;height:7px;border-radius:50%;background:'+ac+';margin-left:7px;flex-shrink:0"></div><button onclick="openEditSup(\''+r.s.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 4px;margin-left:3px;font-size:13px"><i class="ti ti-pencil"></i></button></div>';
-    }).join('')+
-    '</div></div>';
+    (supsHoje.length === 0 ?
+      '<div style="text-align:center;padding:24px;color:var(--text3)">Sem tarefas programadas</div>' :
+      supsHoje.map(s=>{
+        const rec = getRec(s.id, TODAY);
+        const tasks = getSchedAct(s.id, TODAY).split('\n').filter(Boolean);
+        const progs = rec.taskProgs || {};
+        const hasPhotos = (rec.photos||[]).length > 0;
+        const attColor = rec.att==='presente'?'#1a9e4a':rec.att==='parcial'?'#f59e0b':rec.att==='ausente'?'#ef4444':'#d1d5db';
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--border)">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:'+s.color+'"></div>'+
+          '<span style="font-size:12px;font-weight:700;flex:1">'+s.name+'</span>'+
+          (hasPhotos?'<i class="ti ti-photo" style="font-size:13px;color:#3b82f6" title="Tem fotos"></i>':'')+
+          '<div style="width:8px;height:8px;border-radius:50%;background:'+attColor+'" title="'+(rec.att||'sem registo')+'"></div>'+
+          '</div>'+
+          tasks.map((t,i)=>{
+            const p = progs[i] !== undefined ? progs[i] : (rec.prog||0);
+            const label = t.split('—')[0].trim();
+            return '<div style="margin-left:16px;margin-bottom:3px">'+
+              '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">'+label+'</div>'+
+              '<div style="display:flex;align-items:center;gap:6px">'+
+              '<div style="flex:1;height:4px;background:#e5e7eb;border-radius:2px">'+
+              '<div style="width:'+p+'%;height:100%;background:'+s.color+';border-radius:2px;transition:width .3s"></div></div>'+
+              '<span style="font-size:10px;font-weight:700;min-width:28px;color:var(--text2)">'+p+'%</span>'+
+              '</div></div>';
+          }).join('')+
+          '</div>';
+      }).join('')
+    )+
+    '</div>'+
+    '</div>';
 }
 
-// ── GANTT ─────────────────────────────────────────────────────────────────
+
 function getViewDays(){
   const days=[];
   const w=window.innerWidth;
