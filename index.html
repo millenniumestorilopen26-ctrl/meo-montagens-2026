@@ -651,7 +651,7 @@ function setRec(sid, d, data){
         try{localStorage.setItem('meo_photos_'+k, JSON.stringify(allPhotos));}catch(e){}
         const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',photos:allPhotos};
         fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
-        if(state.page==='registo') renderReg();
+        if(state.page==='registo') renderRegPhotosOnly(sid,d);
         if(state.page==='relatorio') renderRel();
       }).catch(()=>{
         const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',photos:dedup(photos.map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||'',cloudinary:!!p.cloudinary})))};
@@ -1864,6 +1864,20 @@ document.getElementById('add-sup-btn').addEventListener('click',openAddSup);
 
 
 // ── REGISTO ───────────────────────────────────────────────────────────────
+function renderRegPhotosOnly(sid, d){
+  // Only update the photo thumbnails for one supplier without full re-render
+  const k = dkey(sid, d);
+  const r = _recCache[k] || {};
+  const photos = r.photos || [];
+  const el = document.getElementById('photos-'+sid);
+  if(!el) return;
+  el.innerHTML = photos.filter(p=>p.dataUrl).map((p,i)=>
+    '<div style="position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer" class="ph-thumb" data-sid="'+sid+'" data-pi="'+i+'">'+
+    '<img src="'+p.dataUrl+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
+    '<button class="ph-del" data-sid="'+sid+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer">✕</button></div>'
+  ).join('');
+}
+
 function renderReg(){
   const dt=String(TODAY.getDate()).padStart(2,'0')+' de '+MLONG[TODAY.getMonth()]+' de '+TODAY.getFullYear();
   document.getElementById('reg-date').textContent=dt;
