@@ -1946,8 +1946,8 @@ function renderReg(){
     // Live label update
     const lbl=document.getElementById('pv-'+sid);if(lbl)lbl.textContent=v+'%';
   }));
-  document.querySelectorAll('.ainp').forEach(inp=>inp.addEventListener('change',e=>setRec(e.target.dataset.sid,TODAY,{act:e.target.value})));
-  document.querySelectorAll('.oinp').forEach(ta=>ta.addEventListener('change',e=>setRec(e.target.dataset.sid,TODAY,{obs:e.target.value})));
+  document.querySelectorAll('.ainp').forEach(inp=>inp.addEventListener('input',e=>setRec(e.target.dataset.sid,TODAY,{act:e.target.value})));
+  document.querySelectorAll('.oinp').forEach(ta=>ta.addEventListener('input',e=>setRec(e.target.dataset.sid,TODAY,{obs:e.target.value})));
   document.querySelectorAll('.cam-inp,.gal-inp').forEach(inp=>inp.addEventListener('change',e=>{
     const sid=e.target.dataset.sid;
     Array.from(e.target.files||[]).forEach(file=>{
