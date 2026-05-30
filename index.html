@@ -649,12 +649,12 @@ function setRec(sid, d, data){
         const allPhotos = dedup([...fbPhotos, ...newBase64.map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl,cloudinary:!!p.cloudinary}))]);
         _recCache[k].photos = allPhotos;
         try{localStorage.setItem('meo_photos_'+k, JSON.stringify(allPhotos));}catch(e){}
-        const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',photos:allPhotos};
+        const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:allPhotos};
         fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
         if(state.page==='registo') renderRegPhotosOnly(sid,d);
         if(state.page==='relatorio') renderRel();
       }).catch(()=>{
-        const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',photos:dedup(photos.map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||'',cloudinary:!!p.cloudinary})))};
+        const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:dedup(photos.map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||'',cloudinary:!!p.cloudinary})))};
         fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
       });
     });
@@ -665,10 +665,10 @@ function setRec(sid, d, data){
       const allPhotos = dedup([...fbPhotos, ...existingUrls]);
       _recCache[k].photos = allPhotos;
       try{localStorage.setItem('meo_photos_'+k, JSON.stringify(allPhotos));}catch(e){}
-      const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',photos:allPhotos};
+      const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:allPhotos};
       fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
     }).catch(()=>{
-      const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',photos:existingUrls};
+      const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:existingUrls};
       fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
     });
   }
