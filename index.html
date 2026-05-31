@@ -2158,24 +2158,37 @@ function renderReg(){
         const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
         const dateStr=String(now.getFullYear())+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
         const fname='MEO26_'+sid+'_'+dateStr+'_'+ts.replace(':','')+'.jpg';
-        // Save with dataUrl immediately (fast feedback)
-        const photoObj={type:'Foto',desc:file.name||fname,ts,dataUrl:ev.target.result,cloudUrl:'',uploading:true};
+        // Show uploading state immediately
+        const photoObj={type:'Foto',desc:fname,ts,dataUrl:ev.target.result,cloudUrl:'',uploading:true};
         const photos=[...(r.photos||[]),photoObj];
         setRec(sid,TODAY,{photos});
         renderRegPhotosOnly(sid,TODAY);
-        // Upload to Cloudinary in background
-        try{
-          const cloudUrl=await uploadToCloudinary(ev.target.result,fname);
-          const rec2=getRec(sid,TODAY);
-          const photos2=(rec2.photos||[]).map(p=>p.dataUrl===ev.target.result?{...p,cloudUrl,uploading:false}:p);
-          setRec(sid,TODAY,{photos:photos2});
-          renderRegPhotosOnly(sid,TODAY);
-        }catch(err){
-          console.warn('Cloudinary upload failed:',err);
-          // Keep dataUrl version
-          const rec2=getRec(sid,TODAY);
-          const photos2=(rec2.photos||[]).map(p=>p.dataUrl===ev.target.result?{...p,uploading:false}:p);
-          setRec(sid,TODAY,{photos:photos2});
+        showToast('📤 A fazer upload...');
+        // Upload to Cloudinary - MANDATORY
+        let retries=3;
+        while(retries>0){
+          try{
+            const cloudUrl=await uploadToCloudinary(ev.target.result,fname);
+            const rec2=getRec(sid,TODAY);
+            const photos2=(rec2.photos||[]).map(p=>p.dataUrl===ev.target.result?{...p,cloudUrl,uploading:false}:p);
+            setRec(sid,TODAY,{photos:photos2});
+            renderRegPhotosOnly(sid,TODAY);
+            showToast('✅ Foto guardada na cloud!');
+            retries=0;
+          }catch(err){
+            retries--;
+            if(retries>0){
+              showToast('⏳ A tentar de novo...');
+              await new Promise(res=>setTimeout(res,2000));
+            }else{
+              // Upload failed - remove photo and alert user
+              const rec2=getRec(sid,TODAY);
+              const photos2=(rec2.photos||[]).filter(p=>p.dataUrl!==ev.target.result);
+              setRec(sid,TODAY,{photos:photos2});
+              renderRegPhotosOnly(sid,TODAY);
+              showToast('❌ Falha no upload. Verifica a ligação e tenta de novo.');
+            }
+          }
         }
       };reader.readAsDataURL(file);
     });
