@@ -2181,12 +2181,12 @@ function renderReg(){
               showToast('⏳ A tentar de novo...');
               await new Promise(res=>setTimeout(res,2000));
             }else{
-              // Upload failed - remove photo and alert user
+              // Upload failed - keep photo locally with error state
               const rec2=getRec(sid,TODAY);
-              const photos2=(rec2.photos||[]).filter(p=>p.dataUrl!==ev.target.result);
+              const photos2=(rec2.photos||[]).map(p=>p.dataUrl===ev.target.result?{...p,uploading:false,uploadFailed:true}:p);
               setRec(sid,TODAY,{photos:photos2});
               renderRegPhotosOnly(sid,TODAY);
-              showToast('❌ Falha no upload. Verifica a ligação e tenta de novo.');
+              showToast('❌ Falha no upload. Foto guardada localmente — clica em ↻ para tentar de novo.');
             }
           }
         }
@@ -2202,9 +2202,10 @@ function renderReg(){
   const regCards = document.getElementById('reg-cards');
   if(regCards && !regCards._photoDelegate){
     regCards._photoDelegate = true;
-    regCards.addEventListener('click', e=>{
-      const thumb = e.target.closest('.ph-thumb');
+    regCards.addEventListener('click', async e=>{
+      const retry = e.target.closest('.ph-retry');
       const del   = e.target.closest('.ph-del');
+      const thumb = e.target.closest('.ph-thumb');
       if(del){
         e.stopPropagation();
         const sid=del.dataset.sid, pi=parseInt(del.dataset.pi);
@@ -2214,7 +2215,34 @@ function renderReg(){
         renderRegPhotosOnly(sid,TODAY);
         return;
       }
-      if(thumb){
+      if(retry){
+        e.stopPropagation();
+        const sid=retry.dataset.sid, pi=parseInt(retry.dataset.pi);
+        const rec=getRec(sid,TODAY);
+        const p=(rec.photos||[])[pi];
+        if(!p||!p.dataUrl)return;
+        // Mark as uploading
+        const photos=(rec.photos||[]).map((ph,i)=>i===pi?{...ph,uploading:true,uploadFailed:false}:ph);
+        setRec(sid,TODAY,{photos});
+        renderRegPhotosOnly(sid,TODAY);
+        showToast('📤 A tentar de novo...');
+        try{
+          const cloudUrl=await uploadToCloudinary(p.dataUrl,p.desc||'foto.jpg');
+          const rec2=getRec(sid,TODAY);
+          const photos2=(rec2.photos||[]).map((ph,i)=>i===pi?{...ph,cloudUrl,uploading:false,uploadFailed:false}:ph);
+          setRec(sid,TODAY,{photos:photos2});
+          renderRegPhotosOnly(sid,TODAY);
+          showToast('✅ Upload concluído!');
+        }catch(err){
+          const rec2=getRec(sid,TODAY);
+          const photos2=(rec2.photos||[]).map((ph,i)=>i===pi?{...ph,uploading:false,uploadFailed:true}:ph);
+          setRec(sid,TODAY,{photos:photos2});
+          renderRegPhotosOnly(sid,TODAY);
+          showToast('❌ Falha novamente. Verifica a ligação.');
+        }
+        return;
+      }
+      if(thumb&&!e.target.closest('.ph-retry')&&!e.target.closest('.ph-del')){
         const rec=getRec(thumb.dataset.sid,TODAY);
         openLightbox(rec.photos||[],parseInt(thumb.dataset.pi));
       }
