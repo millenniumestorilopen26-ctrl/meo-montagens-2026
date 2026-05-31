@@ -1629,127 +1629,166 @@ document.querySelectorAll('.sb-btn,.bn-btn').forEach(b=>b.addEventListener('clic
 function renderDash(){
   const sups = SUPS.filter(s=>s.active);
   const recs = sups.map(s=>({...getRec(s.id,TODAY), s}));
-  const pr  = recs.filter(r=>r.att==='presente').length;
-  const pa  = recs.filter(r=>r.att==='parcial').length;
-  const ab  = recs.filter(r=>r.att==='ausente').length;
-  const avg = Math.round(recs.reduce((a,r)=>a+r.prog,0)/sups.length);
+  const pr   = recs.filter(r=>r.att==='presente').length;
+  const pa   = recs.filter(r=>r.att==='parcial').length;
+  const ab   = recs.filter(r=>r.att==='ausente').length;
 
-  // ── DYNAMIC ALERTS based on real data ─────────────────────────────────
+  // Progresso médio só fornecedores com tarefas hoje
+  const supsHoje = sups.filter(s=>getSchedAct(s.id,TODAY).length>0);
+  const avgHoje  = supsHoje.length ? Math.round(supsHoje.reduce((a,s)=>{
+    const rec=getRec(s.id,TODAY); const progs=rec.taskProgs||{};
+    const tasks=getSchedAct(s.id,TODAY).split('\n').filter(Boolean);
+    const p=tasks.length ? Math.round(tasks.reduce((sum,t,i)=>sum+(progs[i]!==undefined?progs[i]:(rec.prog||0)),0)/tasks.length) : (rec.prog||0);
+    return a+p;
+  },0)/supsHoje.length) : 0;
+
+  // ── ALERTAS DINÂMICOS ────────────────────────────────────────────────
   const dynAlerts = [];
-  const todayMs = new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()).getTime();
+  const hour = new Date().getHours();
 
   sups.forEach(s=>{
-    const tasks = getSchedAct(s.id, TODAY).split('\n').filter(Boolean);
-    const rec   = getRec(s.id, TODAY);
-    const progs = rec.taskProgs || {};
-    const hasTasks = tasks.length > 0;
+    const tasks = getSchedAct(s.id,TODAY).split('\n').filter(Boolean);
+    const rec   = getRec(s.id,TODAY);
+    const progs = rec.taskProgs||{};
+    if(!tasks.length) return;
 
-    // 1. Absent supplier with tasks today
-    if(hasTasks && rec.att==='ausente'){
-      dynAlerts.push({level:'ALTO', sup:s.name, zone:'', msg:'Ausente — '+tasks[0].split('—')[0].trim(), time:''});
-    }
-    // 2. Has tasks today but no attendance filled yet (after 9am)
-    const hour = TODAY.getHours();
-    if(hasTasks && !rec.att && hour >= 9){
-      dynAlerts.push({level:'MÉDIO', sup:s.name, zone:'', msg:'Sem registo de assiduidade', time:''});
-    }
-    // 3. Task started but 0% progress (after 10am)
-    if(hasTasks && hour >= 10){
+    // 1. Ausente com tarefas
+    if(rec.att==='ausente')
+      dynAlerts.push({level:'ALTO', sup:s.name, color:s.color, msg:'Ausente — '+tasks[0].split('—')[0].trim()});
+
+    // 2. Sem assiduidade depois das 9h
+    if(!rec.att && hour>=9)
+      dynAlerts.push({level:'MÉDIO', sup:s.name, color:s.color, msg:'Sem registo de assiduidade'});
+
+    // 3. Progresso 0% depois das 10h
+    if(hour>=10){
       tasks.forEach((t,i)=>{
-        const p = progs[i] || rec.prog || 0;
-        if(p === 0){
-          dynAlerts.push({level:'BAIXO', sup:s.name, zone:'', msg:'Progresso 0% — '+t.split('—')[0].trim(), time:''});
-        }
+        const p=progs[i]!==undefined?progs[i]:(rec.prog||0);
+        if(p===0) dynAlerts.push({level:'BAIXO', sup:s.name, color:s.color, msg:'0% — '+t.split('—')[0].trim()});
       });
     }
-    // 4. Check zone conflicts: multiple suppliers in same zone today
-    if(hasTasks){
-      tasks.forEach(t=>{
-        const zone = t.includes('—') ? t.split('—')[1].trim() : '';
-        if(!zone) return;
-        sups.forEach(s2=>{
-          if(s2.id === s.id) return;
-          const tasks2 = getSchedAct(s2.id, TODAY).split('\n').filter(Boolean);
-          tasks2.forEach(t2=>{
-            const zone2 = t2.includes('—') ? t2.split('—')[1].trim() : '';
-            if(zone2 && zone2 === zone){
-              // Only add once per pair
-              const key = [s.id,s2.id].sort().join('-')+'|'+zone;
-              if(!dynAlerts.find(a=>a._key===key)){
-                dynAlerts.push({level:'MÉDIO', sup:s.name+' + '+s2.name, zone:zone, msg:'Partilham zona: '+zone, time:'', _key:key});
-              }
-            }
-          });
+
+    // 4. Conflito de zona com outro fornecedor
+    tasks.forEach(t=>{
+      const zone=t.includes('—')?t.split('—')[1].trim():'';
+      if(!zone) return;
+      sups.forEach(s2=>{
+        if(s2.id===s.id) return;
+        const tasks2=getSchedAct(s2.id,TODAY).split('\n').filter(Boolean);
+        tasks2.forEach(t2=>{
+          const zone2=t2.includes('—')?t2.split('—')[1].trim():'';
+          if(zone2&&zone2===zone){
+            const key=[s.id,s2.id].sort().join('-')+'|'+zone;
+            if(!dynAlerts.find(a=>a._key===key))
+              dynAlerts.push({level:'MÉDIO',sup:s.name+' + '+s2.name,color:'#f59e0b',msg:'Conflito de zona: '+zone,_key:key});
+          }
         });
       });
-    }
+    });
   });
 
+  // Sort: ALTO first
+  const lvlOrder={ALTO:0,MÉDIO:1,BAIXO:2};
+  dynAlerts.sort((a,b)=>lvlOrder[a.level]-lvlOrder[b.level]);
   const crits = dynAlerts.filter(a=>a.level==='ALTO').length;
-  const ab2 = document.getElementById('alert-badge');
+
+  // Update badges
+  const ab2=document.getElementById('alert-badge');
   if(ab2){ab2.textContent=crits?crits+' alertas críticos':'';ab2.style.display=crits?'':'none';}
-  const tb = document.getElementById('today-badge');
+  const tb=document.getElementById('today-badge');
   if(tb) tb.textContent=String(TODAY.getDate()).padStart(2,'0')+' '+MSHT[TODAY.getMonth()]+' '+TODAY.getFullYear();
 
-  // ── FORNECEDORES HOJE (only with tasks) ────────────────────────────────
-  const supsHoje = sups.filter(s=>getSchedAct(s.id,TODAY).length>0);
+  const lvlColor={ALTO:'#ef4444',MÉDIO:'#f59e0b',BAIXO:'#3b82f6'};
 
-  const lvlColor = {ALTO:'#ef4444', MÉDIO:'#f59e0b', BAIXO:'#3b82f6'};
+  // ── BUILD FASES from SCHED_ENTRIES dynamically ───────────────────────
+  const todayMs=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()).getTime();
+  // Group entries by start month to create phases
+  const activeEntries=SCHED_ENTRIES.filter(e=>{
+    const s=new Date(e.s[0],e.s[1],e.s[2]).getTime();
+    const en=new Date(e.e[0],e.e[1],e.e[2]).getTime();
+    return en>=todayMs && s<=new Date(todayMs+30*86400000).getTime(); // next 30 days
+  });
+  // Get unique active suppliers in next 30 days
+  const activeSupIds=[...new Set(activeEntries.map(e=>e.sid))];
+  const activeSupNames=activeSupIds.map(id=>{const s=SUPS.find(x=>x.id===id);return s?s.name:'';}).filter(Boolean);
 
   document.getElementById('pg-dashboard').innerHTML =
     // KPI row
     '<div class="kpi-row">'+
-    '<div class="kpi"><div class="kpi-lbl">Progresso Médio</div><div class="kpi-val" style="color:var(--terra)">'+avg+'%</div><div class="kpi-sub">todos os fornecedores</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Presentes</div><div class="kpi-val" style="color:#1a9e4a">'+pr+'</div><div class="kpi-sub">de '+sups.length+' activos</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Parcial / Ausente</div><div class="kpi-val" style="color:#e07b39">'+(pa+ab)+'</div><div class="kpi-sub">'+(ab>0?ab+' ausentes':'0 ausentes')+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Progresso Hoje</div><div class="kpi-val" style="color:var(--terra)">'+avgHoje+'%</div><div class="kpi-sub">'+supsHoje.length+' fornecedores com tarefas</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Presentes</div><div class="kpi-val" style="color:#1a9e4a">'+pr+'</div><div class="kpi-sub">de '+supsHoje.length+' esperados hoje</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Parcial / Ausente</div><div class="kpi-val" style="color:#e07b39">'+(pa+ab)+'</div><div class="kpi-sub">'+(ab>0?'<span style="color:#ef4444">'+ab+' ausentes</span>':'0 ausentes')+'</div></div>'+
     '<div class="kpi"><div class="kpi-lbl">Alertas Críticos</div><div class="kpi-val" style="color:#ef4444">'+crits+'</div><div class="kpi-sub">requerem atenção</div></div>'+
     '</div>'+
 
-    // Two column layout
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">'+
 
-    // LEFT: Alerts
-    '<div class="card">'+
-    '<div class="ch"><div class="ct"><i class="ti ti-alert-triangle"></i>Alertas do Dia</div></div>'+
-    (dynAlerts.length === 0 ?
-      '<div style="text-align:center;padding:24px;color:var(--text3)"><i class="ti ti-circle-check" style="font-size:28px;color:#1a9e4a"></i><div style="margin-top:8px;font-size:13px">Sem alertas activos</div></div>' :
+    // LEFT: Alertas
+    '<div>'+
+    '<div class="card" style="margin-bottom:16px">'+
+    '<div class="ch"><div class="ct"><i class="ti ti-alert-triangle"></i>Alertas do Dia</div><span style="font-size:11px;color:var(--text3)">automático</span></div>'+
+    (dynAlerts.length===0?
+      '<div style="text-align:center;padding:20px;color:var(--text3)"><i class="ti ti-circle-check" style="font-size:28px;color:#1a9e4a;display:block;margin-bottom:8px"></i>Sem alertas activos</div>':
       dynAlerts.slice(0,8).map(a=>
-        '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
-        '<span style="background:'+lvlColor[a.level]+';color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;flex-shrink:0;margin-top:1px">'+a.level+'</span>'+
-        '<div><div style="font-size:12px;font-weight:700">'+a.sup+(a.zone?' · <span style=\"color:var(--text3)\">'+a.zone+'</span>':'')+'</div>'+
+        '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'+
+        '<span style="background:'+lvlColor[a.level]+';color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;flex-shrink:0">'+a.level+'</span>'+
+        '<div><div style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px">'+
+        '<div style="width:7px;height:7px;border-radius:50%;background:'+(a.color||'#999')+';flex-shrink:0"></div>'+a.sup+'</div>'+
         '<div style="font-size:11px;color:var(--text2);margin-top:1px">'+a.msg+'</div></div>'+
         '</div>'
       ).join('')
     )+
     '</div>'+
 
+    // Próximas tarefas (next 30 days)
+    '<div class="card">'+
+    '<div class="ch"><div class="ct"><i class="ti ti-calendar"></i>Activo nos próximos 30 dias</div></div>'+
+    (activeSupNames.length===0?
+      '<div style="padding:16px;color:var(--text3);font-size:12px">Sem tarefas programadas</div>':
+      activeSupNames.slice(0,8).map(name=>{
+        const s=SUPS.find(x=>x.name===name);
+        const es=activeEntries.filter(e=>e.sid===(s?s.id:''));
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:'+(s?s.color:'#999')+'"></div>'+
+          '<span style="font-size:12px;font-weight:600;flex:1">'+name+'</span>'+
+          '<span style="font-size:10px;color:var(--text3)">'+es.length+' tarefa'+(es.length!==1?'s':'')+'</span>'+
+          '</div>';
+      }).join('')
+    )+
+    '</div>'+
+    '</div>'+
+
     // RIGHT: Fornecedores hoje
     '<div class="card">'+
-    '<div class="ch"><div class="ct"><i class="ti ti-users"></i>Fornecedores Hoje</div></div>'+
-    (supsHoje.length === 0 ?
-      '<div style="text-align:center;padding:24px;color:var(--text3)">Sem tarefas programadas</div>' :
+    '<div class="ch"><div class="ct"><i class="ti ti-users"></i>Fornecedores Hoje</div><span style="font-size:11px;color:var(--text3)">'+supsHoje.length+' activos</span></div>'+
+    (supsHoje.length===0?
+      '<div style="text-align:center;padding:24px;color:var(--text3)">Sem tarefas programadas hoje</div>':
       supsHoje.map(s=>{
-        const rec = getRec(s.id, TODAY);
-        const tasks = getSchedAct(s.id, TODAY).split('\n').filter(Boolean);
-        const progs = rec.taskProgs || {};
-        const hasPhotos = (rec.photos||[]).length > 0;
-        const attColor = rec.att==='presente'?'#1a9e4a':rec.att==='parcial'?'#f59e0b':rec.att==='ausente'?'#ef4444':'#d1d5db';
+        const rec=getRec(s.id,TODAY);
+        const tasks=getSchedAct(s.id,TODAY).split('\n').filter(Boolean);
+        const progs=rec.taskProgs||{};
+        const hasPhotos=(rec.photos||[]).length>0;
+        const attColor=rec.att==='presente'?'#1a9e4a':rec.att==='parcial'?'#f59e0b':rec.att==='ausente'?'#ef4444':'#d1d5db';
+        const attLabel=rec.att==='presente'?'P':rec.att==='parcial'?'Pa':rec.att==='ausente'?'A':'?';
         return '<div style="padding:8px 0;border-bottom:1px solid var(--border)">'+
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
-          '<div style="width:8px;height:8px;border-radius:50%;background:'+s.color+'"></div>'+
-          '<span style="font-size:12px;font-weight:700;flex:1">'+s.name+'</span>'+
-          (hasPhotos?'<i class="ti ti-photo" style="font-size:13px;color:#3b82f6" title="Tem fotos"></i>':'')+
-          '<div style="width:8px;height:8px;border-radius:50%;background:'+attColor+'" title="'+(rec.att||'sem registo')+'"></div>'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'+
+          '<div style="width:9px;height:9px;border-radius:50%;background:'+s.color+'"></div>'+
+          '<span style="font-size:12px;font-weight:800;flex:1">'+s.name+'</span>'+
+          (hasPhotos?'<i class="ti ti-photo" style="font-size:12px;color:#3b82f6" title="Tem fotos"></i>':'')+
+          '<span style="font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;background:'+attColor+';color:#fff">'+attLabel+'</span>'+
           '</div>'+
           tasks.map((t,i)=>{
-            const p = progs[i] !== undefined ? progs[i] : (rec.prog||0);
-            const label = t.split('—')[0].trim();
-            return '<div style="margin-left:16px;margin-bottom:3px">'+
-              '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">'+label+'</div>'+
-              '<div style="display:flex;align-items:center;gap:6px">'+
-              '<div style="flex:1;height:4px;background:#e5e7eb;border-radius:2px">'+
-              '<div style="width:'+p+'%;height:100%;background:'+s.color+';border-radius:2px;transition:width .3s"></div></div>'+
-              '<span style="font-size:10px;font-weight:700;min-width:28px;color:var(--text2)">'+p+'%</span>'+
+            const p=progs[i]!==undefined?progs[i]:(rec.prog||0);
+            const label=t.split('—')[0].trim();
+            const zona=t.includes('—')?t.split('—').slice(1).join('—').trim():'';
+            return '<div style="margin-left:14px;margin-bottom:5px">'+
+              '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">'+
+              '<span style="font-size:10px;color:var(--text);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+label+(zona?' — '+zona:'')+'">'+label+'</span>'+
+              (zona?'<span style="font-size:9px;color:var(--text3);background:#f3f4f6;padding:0 4px;border-radius:3px;flex-shrink:0">'+zona+'</span>':'')+
+              '<span style="font-size:10px;font-weight:700;min-width:26px;text-align:right;color:'+(p>=75?'#1a9e4a':p>=25?'#f59e0b':'var(--text3)')+'">'+p+'%</span>'+
+              '</div>'+
+              '<div style="height:5px;background:#e5e7eb;border-radius:3px">'+
+              '<div style="width:'+p+'%;height:100%;background:'+s.color+';border-radius:3px;transition:width .3s"></div>'+
               '</div></div>';
           }).join('')+
           '</div>';
