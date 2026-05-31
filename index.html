@@ -2037,8 +2037,8 @@ function renderRegPhotosOnly(sid, d){
   if(!el) return;
   el.innerHTML = photos.filter(p=>p.dataUrl).map((p,i)=>
     '<div style="position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer" class="ph-thumb" data-sid="'+sid+'" data-pi="'+i+'">'+
-    '<img src="'+(p.cloudUrl||p.dataUrl)+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
-    (p.cloudUrl?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(59,130,246,.85);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff"><i class="ti ti-cloud-check"></i></div>':p.uploading?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff">↑</div>':'')+
+    '<img src="'+((p.cloudUrl&&p.cloudUrl.startsWith('http'))?p.cloudUrl:p.dataUrl||'')+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
+    ((p.cloudUrl&&p.cloudUrl.startsWith('http'))?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(59,130,246,.85);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff"><i class="ti ti-cloud-check"></i></div>':p.uploading?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff">↑</div>':'')+
     '<button class="ph-del" data-sid="'+sid+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer">✕</button></div>'
   ).join('');
   // Bind click listeners directly
@@ -2964,7 +2964,7 @@ function openLightbox(photos, startIdx){
 
   function draw(){
     const p = imgs[cur];
-    const src = p.cloudUrl || p.dataUrl || '';
+    const cloudOk = p.cloudUrl && p.cloudUrl.startsWith('http'); const src = cloudOk ? p.cloudUrl : (p.dataUrl||'');
     const mr = getModalRoot();
 
     // Build HTML using DOM to avoid quote issues
@@ -5353,7 +5353,7 @@ function renderRegPhotosOnly(sid, d){
   if(!el) return;
   el.innerHTML = photos.filter(p=>p.dataUrl).map((p,i)=>
     '<div style="position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer" class="ph-thumb" data-sid="'+sid+'" data-pi="'+i+'">'+
-    '<img src="'+(p.cloudUrl||p.dataUrl)+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
+    '<img src="'+((p.cloudUrl&&p.cloudUrl.startsWith('http'))?p.cloudUrl:p.dataUrl||'')+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
     (p.cloudUrl?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(59,130,246,.85);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff"><i class="ti ti-cloud-check"></i></div>':p.uploading?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff">↑</div>':'')+
     '<button class="ph-del" data-sid="'+sid+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer">✕</button></div>'
   ).join('');
