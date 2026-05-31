@@ -1714,12 +1714,33 @@ function renderDash(){
 
   document.getElementById('pg-dashboard').innerHTML =
     // KPI row
-    '<div class="kpi-row">'+
+    (()=>{
+    const eventStart=new Date(2026,6,17); // 17 Jul 2026
+    const now=new Date();
+    const diff=eventStart-now;
+    const daysLeft=Math.max(0,Math.ceil(diff/86400000));
+    const hoursLeft=Math.max(0,Math.floor((diff%86400000)/3600000));
+    const isToday=daysLeft===0;
+    const countdownHtml=isToday?
+      '<div class="kpi" style="background:var(--yellow);border:2px solid var(--dark)">'+
+      '<div class="kpi-lbl" style="color:var(--dark)">🎾 EVENTO</div>'+
+      '<div class="kpi-val" style="color:var(--dark);font-size:28px">HOJE</div>'+
+      '<div class="kpi-sub" style="color:var(--dark)">Millennium Estoril Open 2026</div></div>':
+      '<div class="kpi" style="border:2px solid var(--yellow)">'+
+      '<div class="kpi-lbl">🎾 Início do Evento</div>'+
+      '<div style="display:flex;align-items:baseline;gap:4px;margin:4px 0">'+
+      '<div class="kpi-val" style="color:var(--yellow)">'+daysLeft+'</div>'+
+      '<span style="font-size:13px;font-weight:700;color:var(--text2)">dias</span>'+
+      (daysLeft<10?'<span style="font-size:11px;color:var(--text3)">'+hoursLeft+'h</span>':'')+
+      '</div>'+
+      '<div class="kpi-sub">17 Jul 2026 · Estoril</div></div>';
+    return '<div class="kpi-row">'+
+    countdownHtml+
     '<div class="kpi"><div class="kpi-lbl">Progresso Hoje</div><div class="kpi-val" style="color:var(--terra)">'+avgHoje+'%</div><div class="kpi-sub">'+supsHoje.length+' fornecedores com tarefas</div></div>'+
     '<div class="kpi"><div class="kpi-lbl">Presentes</div><div class="kpi-val" style="color:#1a9e4a">'+pr+'</div><div class="kpi-sub">de '+supsHoje.length+' esperados hoje</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Parcial / Ausente</div><div class="kpi-val" style="color:#e07b39">'+(pa+ab)+'</div><div class="kpi-sub">'+(ab>0?'<span style="color:#ef4444">'+ab+' ausentes</span>':'0 ausentes')+'</div></div>'+
     '<div class="kpi"><div class="kpi-lbl">Alertas Críticos</div><div class="kpi-val" style="color:#ef4444">'+crits+'</div><div class="kpi-sub">requerem atenção</div></div>'+
-    '</div>'+
+    '</div>';
+  })()+
 
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">'+
 
