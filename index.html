@@ -2160,7 +2160,7 @@ function renderReg(){
         const fname='MEO26_'+sid+'_'+dateStr+'_'+ts.replace(':','')+'.jpg';
         // Show uploading state immediately
         const photoObj={type:'Foto',desc:fname,ts,dataUrl:ev.target.result,cloudUrl:'',uploading:true};
-        const photos=[...(r.photos||[]),photoObj];
+        const existing=(r.photos||[]);if(existing.some(p=>p.ts===photoObj.ts&&p.desc===photoObj.desc))return;const photos=[...existing,photoObj];
         setRec(sid,TODAY,{photos});
         renderRegPhotosOnly(sid,TODAY);
         showToast('📤 A fazer upload...');
@@ -2972,7 +2972,7 @@ function openLightbox(photos, startIdx){
     mr.innerHTML = '';
     const overlay = document.createElement('div');
     overlay.id = 'lbg';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden';
 
     // Close on background click
     overlay.addEventListener('click', e=>{ if(e.target===overlay) mr.innerHTML=''; });
@@ -3006,7 +3006,7 @@ function openLightbox(photos, startIdx){
 
     // Nav row
     const navRow = document.createElement('div');
-    navRow.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;max-width:900px';
+    navRow.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;max-width:900px;flex:1;min-height:0';
 
     // Prev
     const prevBtn = document.createElement('button');
@@ -3017,12 +3017,14 @@ function openLightbox(photos, startIdx){
 
     // Image
     const imgWrap = document.createElement('div');
-    imgWrap.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center';
+    imgWrap.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0';
     const img = document.createElement('img');
     img.src = src;
     img.style.cssText = 'max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.6)';
     img.onerror = ()=>{ img.src=''; img.style.display='none'; };
     imgWrap.appendChild(img);
+    // Force reload after append
+    setTimeout(()=>{ if(img.src) img.src = img.src; }, 50);
 
     const caption = document.createElement('div');
     caption.style.cssText = 'margin-top:10px;text-align:center;color:#fff';
