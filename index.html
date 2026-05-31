@@ -2242,9 +2242,10 @@ function renderReg(){
         }
         return;
       }
-      if(thumb&&!e.target.closest('.ph-retry')&&!e.target.closest('.ph-del')){
+      if(thumb){
         const rec=getRec(thumb.dataset.sid,TODAY);
-        openLightbox(rec.photos||[],parseInt(thumb.dataset.pi));
+        const photos=(rec.photos||[]).filter(p=>p.dataUrl||p.cloudUrl);
+        if(photos.length) openLightbox(photos,parseInt(thumb.dataset.pi)||0);
       }
     });
   }
