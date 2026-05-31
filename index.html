@@ -3311,9 +3311,15 @@ function _renderUtilizadoresInner(){
     }
   });
 
-  document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.usr-approve').forEach(b=>b.addEventListener('click',async()=>{
     const users=getUsers();const u=users.find(x=>x.email===b.dataset.email);
-    if(u){u.role='viewer';saveUsers(users);renderUtilizadores();showToast(u.name+' aprovado!');}
+    if(u){
+      u.role='viewer';
+      saveUsers(users);
+      try{ await saveUsersToFirebase(users); }catch(e){ console.warn(e); }
+      renderUtilizadores();
+      showToast(u.name+' aprovado!');
+    }
   }));
   document.querySelectorAll('.usr-reject').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('Rejeitar acesso?'))return;
