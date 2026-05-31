@@ -2185,10 +2185,28 @@ function renderReg(){
     const r=getRec(sid,TODAY);const photos=(r.photos||[]).filter((_,i)=>i!==pi);
     setRec(sid,TODAY,{photos});renderReg();
   }));
-  document.querySelectorAll('.ph-thumb').forEach(el=>el.addEventListener('click',e=>{
-    if(e.target.classList.contains('ph-del'))return;
-    const r=getRec(el.dataset.sid,TODAY);openLightbox(r.photos||[],parseInt(el.dataset.pi));
-  }));
+  // Use event delegation on reg-cards for photo clicks - works even after re-renders
+  const regCards = document.getElementById('reg-cards');
+  if(regCards && !regCards._photoDelegate){
+    regCards._photoDelegate = true;
+    regCards.addEventListener('click', e=>{
+      const thumb = e.target.closest('.ph-thumb');
+      const del   = e.target.closest('.ph-del');
+      if(del){
+        e.stopPropagation();
+        const sid=del.dataset.sid, pi=parseInt(del.dataset.pi);
+        const rec=getRec(sid,TODAY);
+        const photos=(rec.photos||[]).filter((_,i)=>i!==pi);
+        setRec(sid,TODAY,{photos});
+        renderRegPhotosOnly(sid,TODAY);
+        return;
+      }
+      if(thumb){
+        const rec=getRec(thumb.dataset.sid,TODAY);
+        openLightbox(rec.photos||[],parseInt(thumb.dataset.pi));
+      }
+    });
+  }
 }
 document.getElementById('save-all-btn').addEventListener('click',e=>{
   document.querySelectorAll('.ainp').forEach(i=>setRec(i.dataset.sid,TODAY,{act:i.value}));
