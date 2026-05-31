@@ -534,7 +534,7 @@ function getModalRoot(){
 
 // ── CLOUDINARY CONFIG ─────────────────────────────────────────────────────
 const CLOUDINARY_CLOUD = 'dbcuonkqy';
-const CLOUDINARY_PRESET = 'ml_padrão';
+const CLOUDINARY_PRESET = 'ml_padrao';
 
 async function uploadToCloudinary(dataUrl, filename){
   // Convert dataUrl to blob
@@ -2959,6 +2959,7 @@ function openDayModal(sid,d){
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
 function openLightbox(photos, startIdx){
   const imgs = (photos||[]).filter(p=>p&&(p.dataUrl||p.cloudUrl));
+  console.log('openLightbox called, photos:',photos?.length,'imgs:',imgs.length, 'first dataUrl:', imgs[0]?.dataUrl?.substring(0,50));
   if(!imgs.length){ showToast('Sem fotos para mostrar'); return; }
   let cur = Math.max(0, Math.min(startIdx||0, imgs.length-1));
 
