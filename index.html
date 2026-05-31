@@ -2916,26 +2916,31 @@ function openDayModal(sid,d){
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
 function openLightbox(photos,startIdx){
-  const imgs=photos.filter(p=>p.dataUrl);if(!imgs.length)return;
+  const imgs=photos.filter(p=>p.dataUrl||p.cloudUrl);
+  if(!imgs.length)return;
   let cur=Math.min(startIdx||0,imgs.length-1);
   function draw(){
     const p=imgs[cur];
+    const src=p.cloudUrl||p.dataUrl;
     getModalRoot().innerHTML=
-      '<div id="lbg" style="position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px">'+
-      '<div style="position:absolute;top:14px;right:14px;display:flex;gap:8px">'+
-      '<a href="'+(p.cloudUrl||p.dataUrl)+'" download="'+(p.desc||'foto.jpg')+'" target="_blank" style="background:var(--yellow);color:var(--dark);border-radius:3px;padding:8px 14px;font-size:12px;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-weight:800;text-transform:uppercase"><i class="ti ti-download"></i>Descarregar</a>'+
-      (p.cloudUrl?'<a href="'+p.cloudUrl+'" target="_blank" style="background:rgba(255,255,255,.15);color:#fff;border-radius:3px;padding:8px 14px;font-size:12px;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-weight:700"><i class="ti ti-external-link"></i>Abrir original</a>+':'')+
-      '<button id="lb-close" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:3px;padding:8px 16px;cursor:pointer;font-size:18px">✕</button></div>'+
-      '<div style="display:flex;align-items:center;gap:14px;width:100%;max-width:860px;justify-content:center">'+
-      (cur>0?'<button id="lb-prev" style="background:var(--yellow);color:var(--dark);border:none;border-radius:50%;width:46px;height:46px;cursor:pointer;font-size:24px;flex-shrink:0;font-weight:900">‹</button>':'<div style="width:46px"></div>')+
-      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;max-width:700px">'+
-      '<img src="'+p.dataUrl+'" style="max-width:100%;max-height:68vh;border-radius:var(--r);object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.5)">'+
-      '<div style="margin-top:12px;text-align:center"><div style="color:#fff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.3px">'+(p.desc||'')+'</div>'+
-      '<div style="color:rgba(255,255,255,.45);font-size:12px;margin-top:3px">'+(p.ts||'')+' · '+(cur+1)+'/'+imgs.length+'</div></div></div>'+
-      (cur<imgs.length-1?'<button id="lb-next" style="background:var(--yellow);color:var(--dark);border:none;border-radius:50%;width:46px;height:46px;cursor:pointer;font-size:24px;flex-shrink:0;font-weight:900">›</button>':'<div style="width:46px"></div>')+
+      '<div id="lbg" style="position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;touch-action:none">'+
+      '<div style="position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:10">'+
+      '<a href="'+src+'" download="'+(p.desc||'foto.jpg')+'" style="background:var(--yellow);color:#000;border-radius:6px;padding:8px 14px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-weight:800"><i class="ti ti-download"></i> Guardar</a>'+
+      (p.cloudUrl?'<a href="'+p.cloudUrl+'" target="_blank" style="background:rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:8px 12px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:700"><i class="ti ti-external-link"></i> Original</a>':'')+
+      '<button id="lb-close" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;width:38px;height:38px;cursor:pointer;font-size:20px;line-height:1">✕</button>'+
       '</div>'+
-      (imgs.length>1?'<div style="display:flex;gap:6px;margin-top:14px;overflow-x:auto;padding:4px">'+
-      imgs.map((ip,ii)=>'<div data-li="'+ii+'" style="width:52px;height:52px;border-radius:3px;overflow:hidden;cursor:pointer;border:2px solid '+(ii===cur?'var(--yellow)':'transparent')+';flex-shrink:0"><img src="'+ip.dataUrl+'" style="width:100%;height:100%;object-fit:cover"></div>').join('')+
+      '<div style="display:flex;align-items:center;gap:12px;width:100%;max-width:900px">'+
+      (cur>0?'<button id="lb-prev" style="background:var(--yellow);color:#000;border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;font-size:26px;font-weight:900;flex-shrink:0">‹</button>':'<div style="width:48px"></div>')+
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center">'+
+      '<img src="'+src+'" style="max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.6)">'+
+      '<div style="margin-top:10px;text-align:center;color:#fff">'+
+      '<div style="font-size:13px;font-weight:700">'+(p.desc||'Foto')+'</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">'+(p.ts||'')+' · '+(cur+1)+'/'+imgs.length+'</div>'+
+      '</div></div>'+
+      (cur<imgs.length-1?'<button id="lb-next" style="background:var(--yellow);color:#000;border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;font-size:26px;font-weight:900;flex-shrink:0">›</button>':'<div style="width:48px"></div>')+
+      '</div>'+
+      (imgs.length>1?'<div style="display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding:4px;max-width:900px">'+
+      imgs.map((ip,ii)=>'<div data-li="'+ii+'" style="width:54px;height:54px;border-radius:4px;overflow:hidden;cursor:pointer;border:2px solid '+(ii===cur?'var(--yellow)':'rgba(255,255,255,.2)')+';flex-shrink:0"><img src="'+(ip.cloudUrl||ip.dataUrl)+'" style="width:100%;height:100%;object-fit:cover"></div>').join('')+
       '</div>':'')+
       '</div>';
     document.getElementById('lb-close').onclick=()=>getModalRoot().innerHTML='';
@@ -2943,11 +2948,14 @@ function openLightbox(photos,startIdx){
     const prev=document.getElementById('lb-prev');if(prev)prev.onclick=()=>{cur--;draw();};
     const next=document.getElementById('lb-next');if(next)next.onclick=()=>{cur++;draw();};
     document.querySelectorAll('[data-li]').forEach(t=>t.addEventListener('click',()=>{cur=parseInt(t.dataset.li);draw();}));
+    // Keyboard navigation
+    getModalRoot()._keydown=(e)=>{if(e.key==='ArrowLeft'&&cur>0){cur--;draw();}else if(e.key==='ArrowRight'&&cur<imgs.length-1){cur++;draw();}else if(e.key==='Escape')getModalRoot().innerHTML='';};
+    document.addEventListener('keydown',getModalRoot()._keydown);
   }
   draw();
 }
 
-// ── ADD SUPPLIER ──────────────────────────────────────────────────────────
+
 function openAddSup(){
   const COLS=['#ef4444','#3b82f6','#8b5cf6','#f59e0b','#10b981','#06b6d4','#f97316','#ec4899','#84cc16','#fb923c','#34d399','#FFEC1A','#fbbf24','#60a5fa'];
   let selCol=COLS[Math.floor(Math.random()*COLS.length)];
