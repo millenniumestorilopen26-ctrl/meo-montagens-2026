@@ -2148,7 +2148,9 @@ function renderReg(){
   }));
   document.querySelectorAll('.ainp').forEach(inp=>inp.addEventListener('blur',e=>setRec(e.target.dataset.sid,TODAY,{act:e.target.value})));
   document.querySelectorAll('.oinp').forEach(ta=>ta.addEventListener('blur',e=>setRec(e.target.dataset.sid,TODAY,{obs:e.target.value})));
-  document.querySelectorAll('.cam-inp,.gal-inp').forEach(inp=>inp.addEventListener('change',e=>{
+  document.querySelectorAll('.cam-inp,.gal-inp').forEach(inp=>{
+    if(inp._bound) return; inp._bound=true;
+    inp.addEventListener('change',e=>{
     const sid=e.target.dataset.sid;
     Array.from(e.target.files||[]).forEach(file=>{
       if(!file.type.startsWith('image/'))return;
@@ -2872,7 +2874,8 @@ function openPhotoModal(sid,dateStr){
       e.stopPropagation();
       photos.splice(parseInt(btn.dataset.pi),1);
       setRec(sid,d,{photos:[...photos]});draw();
-    }));
+    }  });
+  });
     // Auto-open camera on first open if no photos yet
     if(photos.filter(p=>p.dataUrl).length===0){
       setTimeout(()=>{const cam=document.getElementById('ph-cam');if(cam)cam.click();},300);
@@ -2966,7 +2969,12 @@ function openLightbox(photos, startIdx){
   function draw(){
     const p = imgs[cur];
     const cloudOk = p.cloudUrl && p.cloudUrl.startsWith('http'); const src = p.dataUrl || (cloudOk ? p.cloudUrl : '');
-    const mr = getModalRoot();
+    // Remove any existing lightbox
+  const existing = document.getElementById('lb-overlay-root');
+  if(existing) existing.remove();
+  const mr = document.createElement('div');
+  mr.id = 'lb-overlay-root';
+  document.body.appendChild(mr);
 
     // Build HTML using DOM to avoid quote issues
     mr.innerHTML = '';
@@ -2975,7 +2983,7 @@ function openLightbox(photos, startIdx){
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden';
 
     // Close on background click
-    overlay.addEventListener('click', e=>{ if(e.target===overlay) mr.innerHTML=''; });
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) mr.remove(); });
 
     // Top buttons
     const topBar = document.createElement('div');
@@ -3000,7 +3008,7 @@ function openLightbox(photos, startIdx){
     const closeBtn = document.createElement('button');
     closeBtn.style.cssText = 'background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;width:38px;height:38px;cursor:pointer;font-size:20px;line-height:1';
     closeBtn.textContent = '✕';
-    closeBtn.onclick = ()=> mr.innerHTML='';
+    closeBtn.onclick = ()=>{ mr.remove(); };
     topBar.appendChild(closeBtn);
     overlay.appendChild(topBar);
 
@@ -3067,7 +3075,7 @@ function openLightbox(photos, startIdx){
     const keyHandler = (e)=>{
       if(e.key==='ArrowLeft'&&cur>0){ cur--; draw(); }
       else if(e.key==='ArrowRight'&&cur<imgs.length-1){ cur++; draw(); }
-      else if(e.key==='Escape'){ mr.innerHTML=''; document.removeEventListener('keydown',keyHandler); }
+      else if(e.key==='Escape'){ mr.remove(); document.removeEventListener('keydown',keyHandler); }
     };
     document.addEventListener('keydown', keyHandler);
   }
