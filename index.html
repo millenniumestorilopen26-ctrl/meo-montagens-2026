@@ -2030,7 +2030,6 @@ document.getElementById('add-sup-btn').addEventListener('click',openAddSup);
 
 // ── REGISTO ───────────────────────────────────────────────────────────────
 function renderRegPhotosOnly(sid, d){
-  // Only update the photo thumbnails for one supplier without full re-render
   const k = dkey(sid, d);
   const r = _recCache[k] || {};
   const photos = r.photos || [];
@@ -2042,6 +2041,23 @@ function renderRegPhotosOnly(sid, d){
     (p.cloudUrl?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(59,130,246,.85);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff"><i class="ti ti-cloud-check"></i></div>':p.uploading?'<div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);border-radius:2px;padding:1px 3px;font-size:8px;color:#fff">↑</div>':'')+
     '<button class="ph-del" data-sid="'+sid+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer">✕</button></div>'
   ).join('');
+  // Bind click listeners directly
+  el.querySelectorAll('.ph-thumb').forEach(thumb=>{
+    thumb.addEventListener('click',e=>{
+      if(e.target.classList.contains('ph-del'))return;
+      const rec=getRec(thumb.dataset.sid,TODAY);
+      openLightbox(rec.photos||[],parseInt(thumb.dataset.pi));
+    });
+  });
+  el.querySelectorAll('.ph-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const rec=getRec(btn.dataset.sid,TODAY);
+      const newPhotos=(rec.photos||[]).filter((_,i)=>i!==parseInt(btn.dataset.pi));
+      setRec(btn.dataset.sid,TODAY,{photos:newPhotos});
+      renderRegPhotosOnly(btn.dataset.sid,TODAY);
+    });
+  });
 }
 
 function renderReg(){
