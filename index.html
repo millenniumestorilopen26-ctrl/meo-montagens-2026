@@ -1740,20 +1740,31 @@ function renderDash(){
     )+
     '</div>'+
 
-    // Próximas tarefas (next 30 days)
+    // Próximas tarefas - agrupar por fornecedor com datas
     '<div class="card">'+
     '<div class="ch"><div class="ct"><i class="ti ti-calendar"></i>Activo nos próximos 30 dias</div></div>'+
-    (activeSupNames.length===0?
+    (activeEntries.length===0?
       '<div style="padding:16px;color:var(--text3);font-size:12px">Sem tarefas programadas</div>':
-      activeSupNames.slice(0,8).map(name=>{
-        const s=SUPS.find(x=>x.name===name);
-        const es=activeEntries.filter(e=>e.sid===(s?s.id:''));
-        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'+
-          '<div style="width:8px;height:8px;border-radius:50%;background:'+(s?s.color:'#999')+'"></div>'+
-          '<span style="font-size:12px;font-weight:600;flex:1">'+name+'</span>'+
-          '<span style="font-size:10px;color:var(--text3)">'+es.length+' tarefa'+(es.length!==1?'s':'')+'</span>'+
-          '</div>';
-      }).join('')
+      (()=>{
+        const bySupp={};
+        activeEntries.forEach(e=>{if(!bySupp[e.sid])bySupp[e.sid]=[];bySupp[e.sid].push(e);});
+        const MSHT2=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        return Object.entries(bySupp).slice(0,10).map(([sid,es])=>{
+          const s=SUPS.find(x=>x.id===sid)||{color:'#999',name:sid};
+          const earliest=es.reduce((a,e)=>new Date(e.s[0],e.s[1],e.s[2])<new Date(a.s[0],a.s[1],a.s[2])?e:a);
+          const latest=es.reduce((a,e)=>new Date(e.e[0],e.e[1],e.e[2])>new Date(a.e[0],a.e[1],a.e[2])?e:a);
+          const sd=new Date(earliest.s[0],earliest.s[1],earliest.s[2]);
+          const ed=new Date(latest.e[0],latest.e[1],latest.e[2]);
+          const dateStr=sd.getDate()+' '+MSHT2[sd.getMonth()]+' → '+ed.getDate()+' '+MSHT2[ed.getMonth()];
+          const isNow=sd<=new Date(todayMs)&&ed>=new Date(todayMs);
+          return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'+
+            '<div style="width:8px;height:8px;border-radius:50%;background:'+s.color+';'+( isNow?'box-shadow:0 0 0 2px '+s.color+'40':'')+'"></div>'+
+            '<div style="flex:1">'+
+            '<div style="font-size:12px;font-weight:700">'+s.name+(isNow?' <span style="font-size:9px;background:#1a9e4a;color:#fff;padding:1px 4px;border-radius:3px">AGORA</span>':'')+'</div>'+
+            '<div style="font-size:10px;color:var(--text3)">'+dateStr+' · '+es.length+' tarefa'+(es.length!==1?'s':'')+'</div>'+
+            '</div></div>';
+        }).join('');
+      })()
     )+
     '</div>'+
     '</div>'+
@@ -3592,6 +3603,8 @@ function launchApp(){
     renderDash();
     renderZonas();
     startRealtimeSync();
+    // Auto-refresh dashboard every 2 minutes
+    setInterval(()=>{if(state.page==='dashboard'||state.page==='dash')renderDash();},120000);
   }).catch(err=>{
     console.warn('Firebase offline, using local data:', err);
     initUsers();
