@@ -1567,6 +1567,43 @@ function showToast(msg,isErr){
   document.body.appendChild(t);setTimeout(()=>t.remove(),2500);
 }
 
+
+// ── LIMPAR act ANTIGOS DO FIREBASE QUE CONFLITUAM COM SCHED_ENTRIES ──────
+function cleanStaleActs(){
+  // Para cada entrada do cronograma, garantir que o act no cache/Firebase
+  // reflecte o valor actual do cronograma (não versões antigas)
+  const today = TODAY;
+  SCHED_ENTRIES.forEach(e => {
+    // Iterar pelos dias do range desta entrada
+    const s = new Date(e.s[0], e.s[1], e.s[2]);
+    const en = new Date(e.e[0], e.e[1], e.e[2]);
+    // Só limpar datas futuras ou hoje (não alterar histórico)
+    const cur = new Date(s);
+    while(cur <= en){
+      const curDate = new Date(cur);
+      if(curDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate())){
+        const k = e.sid+'__'+curDate.getFullYear()+'_'+(curDate.getMonth()+1)+'_'+curDate.getDate();
+        const cached = _recCache[k];
+        if(cached && cached.act && cached.act !== e.act){
+          // act gravado diferente do cronograma - verificar se é override manual válido
+          // Se o act gravado está no SCHED_ENTRIES como outra entrada, é stale
+          const isStale = SCHED_ENTRIES.some(se => 
+            (se.act === cached.act || cached.act.includes('Módulos')) && se.sid === e.sid
+          );
+          if(isStale){
+            // Limpar - deixar schedActs tomar controlo
+            cached.act = '';
+            try{ localStorage.removeItem('meo_rec_'+k); }catch(ex){}
+            // Actualizar Firebase de forma silenciosa
+            db.ref('records/'+k.replace('__','_')).update({act:''}).catch(()=>{});
+          }
+        }
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+}
+
 function seedSchedule(){
   SCHED_ENTRIES.forEach(e=>{
     const s=new Date(e.s[0],e.s[1],e.s[2]);
@@ -1575,7 +1612,7 @@ function seedSchedule(){
     while(cur<=en){
       const dow=cur.getDay();
       const ok=e.wd?e.wd.includes(dow):!isWknd(cur);
-      if(ok){const ex=getRec(e.sid,cur);if(!ex.act)setRec(e.sid,cur,{act:e.act});}
+      if(ok){setRec(e.sid,cur,{act:e.act});}
       cur.setDate(cur.getDate()+1);
     }
   });
@@ -3647,6 +3684,7 @@ function launchApp(){
     initUsers();
     loadContacts();
     seedSchedule();
+    cleanStaleActs();
     document.getElementById('today-badge').textContent=String(TODAY.getDate()).padStart(2,'0')+' '+MSHT[TODAY.getMonth()]+' '+TODAY.getFullYear();
     renderDash();
     renderZonas();
