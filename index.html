@@ -840,12 +840,7 @@ function startRealtimeSync(){
   });
 }
 
-// ── PATCH saveContacts to also sync Firebase ──────────────────────────────
-const _origSaveContacts = saveContacts;
-function saveContacts(){
-  _origSaveContacts();
-  saveContactsToFirebase();
-}
+// saveContacts com Firebase integrado em baixo
 
 // ── PATCH saveUsers to also sync Firebase ─────────────────────────────────
 const _origSaveUsers = saveUsers;
@@ -1534,6 +1529,7 @@ function loadContacts(){
 }
 function saveContacts(){
   try{localStorage.setItem('meo_contacts',JSON.stringify(CONTACTS));}catch(e){}
+  saveContactsToFirebase();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
