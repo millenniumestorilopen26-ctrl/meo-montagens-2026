@@ -700,15 +700,16 @@ async function loadRecordsFromFirebase(){
   try{
     const data = await fbGet('records');
     if(data){
+      const fbKeys = Object.keys(data);
+      console.log('[Firebase] Chaves encontradas ('+fbKeys.length+'):', fbKeys.slice(0,10));
       Object.entries(data).forEach(([k, v])=>{
         const key = fromFbKey(k);
-        _recCache[key] = {...(v||{})};
-        // Ensure photos array exists with proper Cloudinary URLs
-        if(!_recCache[key].photos) _recCache[key].photos = [];
-        // Firebase photos have Cloudinary URLs - these are shared across all devices
-        // Local storage may have more recent uploads not yet in Firebase
-        // Firebase é fonte de verdade — não sobrescrever com localStorage
+        console.log('[Firebase] '+k+' → '+key+' | att='+v?.att+' prog='+v?.prog+' fotos='+(v?.photos||[]).length);
+        _recCache[key] = {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{},...(v||{})};
       });
+      console.log('[Firebase] Cache carregada. Entradas:', Object.keys(_recCache).length);
+    } else {
+      console.log('[Firebase] Sem dados em records!');
     }
   }catch(e){console.warn('Firebase load records:', e);}
 }
