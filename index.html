@@ -2301,13 +2301,30 @@ function renderRel(){
       const{cls,lbl}=pBadge(r.prog,r.att);
       const attC=r.att==='presente'?'#1a9e4a':r.att==='parcial'?'#d97706':r.att==='ausente'?'#e02020':'#aaa';
 
+      // Tarefas com % por tarefa
+      const schedTasks = getSchedAct(r.s.id, RD).split('\n').filter(Boolean);
+      const taskProgs = r.taskProgs || {};
+      const tasksHtml = schedTasks.length > 0 ?
+        '<div style="margin-bottom:9px">'+
+        schedTasks.map((t,i)=>{
+          const p = taskProgs[i] || 0;
+          const pc = pColor(p);
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0ece0">'+
+            '<span style="font-size:11px;color:var(--text2);flex:1;line-height:1.3">'+t+'</span>'+
+            '<div style="width:80px;height:4px;background:#e5e7eb;border-radius:2px;flex-shrink:0"><div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:2px"></div></div>'+
+            '<span style="font-size:11px;font-weight:800;color:'+pc+';min-width:30px;text-align:right">'+p+'%</span>'+
+          '</div>';
+        }).join('')+
+        '</div>' : '';
+
       return'<div style="padding:12px 0;border-bottom:1px solid var(--border2)">'+
-        '<div style="display:flex;align-items:center;gap:9px;margin-bottom:'+(r.act||r.obs||realPhotos.length?'9':'0')+'px">'+
+        '<div style="display:flex;align-items:center;gap:9px;margin-bottom:'+(r.act||r.obs||schedTasks.length||realPhotos.length?'9':'0')+'px">'+
         '<div class="sdot" style="background:'+r.s.color+'"></div>'+
         '<div style="flex:1"><div style="font-size:14px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.3px">'+r.s.name+'</div><div style="font-size:11px;color:var(--text3)">'+r.s.area+'</div></div>'+
         '<span style="font-size:11px;font-weight:800;color:'+attC+';background:'+attC+'22;padding:3px 10px;border-radius:3px;text-transform:uppercase;letter-spacing:.3px">'+(r.att||'—')+'</span>'+
         '<div style="display:flex;align-items:center;gap:5px;min-width:90px"><div style="flex:1;height:5px;background:#eee;border-radius:2px;overflow:hidden"><div style="width:'+r.prog+'%;height:100%;background:'+pColor(r.prog)+'"></div></div><span style="font-size:12px;font-weight:800;color:'+pColor(r.prog)+'">'+r.prog+'%</span></div>'+
         '<span class="bdg '+cls+'">'+lbl+'</span></div>'+
+        tasksHtml+
         (r.act||r.obs?'<div style="background:var(--bg);border-radius:var(--r);padding:9px 12px;margin-bottom:'+(realPhotos.length?'9':'0')+'px">'+
         (r.act?'<div style="font-size:12px;color:var(--text2);margin-bottom:'+(r.obs?'4':'0')+'px"><strong>Operação:</strong> '+r.act+'</div>':'')+
         (r.obs?'<div style="font-size:12px;color:var(--text2)"><strong>Obs:</strong> '+r.obs+'</div>':'')+
