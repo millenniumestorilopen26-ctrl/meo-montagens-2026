@@ -624,73 +624,63 @@ function getRec(sid, d){
 
 function setRec(sid, d, data){
   const k = dkey(sid, d);
-  _recCache[k] = {...(_recCache[k]||{att:'',prog:0,act:'',obs:'',photos:[]}),...data};
-  const photos = _recCache[k].photos || [];
-
-  // Dedup seguro: usa ts+desc como chave (nunca usa dataUrl para evitar colisões)
-  function dedup(arr){
+  // Merge data no cache — fotos são sempre aditivas (nunca substituir pelo array de data directamente)
+  const prev = _recCache[k] || {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
+  if(data.photos !== undefined){
+    // Merge aditivo: combinar fotos existentes com as novas, dedup por ts+desc
+    const allPhotos = [...(prev.photos||[]), ...(data.photos||[])];
     const seen = new Set();
-    return arr.filter(p=>{
-      const key = (p.ts||'')+'|'+(p.desc||'')+'|'+(p.type||'');
+    data.photos = allPhotos.filter(p=>{
+      const key = (p.ts||'')+'|'+(p.desc||'');
       if(seen.has(key))return false;
       seen.add(key);return true;
     });
   }
+  _recCache[k] = {...prev, ...data};
+  const photos = _recCache[k].photos || [];
 
-  // Guardar sempre no localStorage primeiro (segurança)
+  // Guardar no localStorage imediatamente (fonte de verdade local)
   try{localStorage.setItem('meo_photos_'+k, JSON.stringify(photos));}catch(e){}
-  try{localStorage.setItem('meo_rec_'+k, JSON.stringify({att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{}}));}catch(e){}
 
+  // Sincronizar com Firebase — cache local é sempre a fonte de verdade
+  function syncToFirebase(){
+    const toSync = {
+      att:_recCache[k].att||'',
+      prog:_recCache[k].prog||0,
+      act:_recCache[k].act||'',
+      obs:_recCache[k].obs||'',
+      taskProgs:_recCache[k].taskProgs||{},
+      photos:(_recCache[k].photos||[]).map(p=>({
+        type:p.type||'Foto',
+        desc:p.desc||'',
+        ts:p.ts||'',
+        dataUrl:p.dataUrl||'',
+        cloudinary:!!p.cloudinary
+      }))
+    };
+    fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase sync:', e));
+  }
+
+  // Upload Cloudinary para fotos base64 novas
   const newBase64 = photos.filter(p => p.dataUrl && p.dataUrl.startsWith('data:'));
-
   if(newBase64.length > 0){
-    // Upload Cloudinary em paralelo - guardar ref antes de alterar
-    const photosSnapshot = photos.map(p=>({...p}));
     Promise.all(newBase64.map(async p => {
       try{
         const url = await uploadToCloudinary(p.dataUrl, p.desc||'foto.jpg');
-        // Actualizar o original em photosSnapshot e em photos
-        const orig = photosSnapshot.find(x=>x.ts===p.ts&&x.desc===p.desc);
-        if(orig){ orig.dataUrl = url; orig.cloudinary = true; }
-        p.dataUrl = url; p.cloudinary = true;
+        p.dataUrl = url;
+        p.cloudinary = true;
+        // Actualizar localStorage após cada upload com sucesso
+        try{localStorage.setItem('meo_photos_'+k, JSON.stringify(_recCache[k].photos||[]));}catch(e){}
       }catch(e){
         console.warn('Cloudinary upload failed, keeping base64:', e);
-        // NÃO apagar - manter base64 para não perder foto
       }
-    })).then(() => {
-      // Ler Firebase e fazer merge ADITIVO (nunca remover fotos existentes)
-      fbGet('records/'+k.replace('__','_')).then(existing => {
-        const fbPhotos = (existing && existing.photos) ? existing.photos : [];
-        // Merge: Firebase + novas, dedup por ts+desc
-        const merged = dedup([...fbPhotos, ...photosSnapshot]);
-        _recCache[k].photos = merged;
-        try{localStorage.setItem('meo_photos_'+k, JSON.stringify(merged));}catch(e){}
-        const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:merged};
-        fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase sync:', e));
-        if(state.page==='registo') renderRegPhotosOnly(sid,d);
-        if(state.page==='relatorio') renderRel();
-      }).catch(()=>{
-        // Firebase inacessível - guardar só as novas (já no localStorage)
-        const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:photosSnapshot};
-        fbUpdate('records/'+k.replace('__','_'), toSync).catch(()=>{});
-      });
+    })).then(()=>{
+      syncToFirebase();
+      if(state.page==='registo') renderRegPhotosOnly(sid,d);
+      if(state.page==='relatorio') renderRel();
     });
   } else {
-    // Sem fotos novas - actualizar campos de texto mas NUNCA apagar fotos existentes
-    fbGet('records/'+k.replace('__','_')).then(existing => {
-      const fbPhotos = (existing && existing.photos) ? existing.photos : [];
-      const localPhotos = photos.filter(p=>p.dataUrl); // fotos já com URL
-      // Merge aditivo: manter todas as fotos do Firebase + locais
-      const merged = dedup([...fbPhotos, ...localPhotos]);
-      _recCache[k].photos = merged;
-      try{localStorage.setItem('meo_photos_'+k, JSON.stringify(merged));}catch(e){}
-      const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:merged};
-      fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase sync:', e));
-    }).catch(()=>{
-      // Firebase inacessível - guardar só o que temos localmente
-      const toSync = {att:_recCache[k].att||'',prog:_recCache[k].prog||0,act:_recCache[k].act||'',obs:_recCache[k].obs||'',taskProgs:_recCache[k].taskProgs||{},photos:photos.filter(p=>p.dataUrl)};
-      fbUpdate('records/'+k.replace('__','_'), toSync).catch(()=>{});
-    });
+    syncToFirebase();
   }
 }
 
