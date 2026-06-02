@@ -628,29 +628,22 @@ function dkey(sid, d){
   return sid+'__'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 // Converter chave interna para chave Firebase (sem __ e sem -)
+// Converter chave interna para chave Firebase
+// Formato: sid_yyyy_m_d (formato original - compatível com dados existentes)
+// Para sids com underscore (mbw_m, cores_irmarfer): substituir _ por - no sid
 function toFbKey(k){
-  const parts = k.split('__');
-  const sid = parts[0].replace(/_/g,'X'); // mbw_m → mbwXm
-  const date = (parts[1]||'').replace(/-/g,'_');
-  return sid+'__'+date;
+  const sep = k.indexOf('__');
+  if(sep < 0) return k;
+  const sid = k.substring(0, sep).replace(/_/g,'-'); // mbw_m → mbw-m
+  const dateParts = k.substring(sep+2).split('-');
+  return sid+'_'+dateParts[0]+'_'+parseInt(dateParts[1])+'_'+parseInt(dateParts[2]);
 }
 // Converter chave Firebase de volta para chave interna
 function fromFbKey(fk){
-  // Formato novo: mbwXm__2026_06_02
-  if(fk.indexOf('__') >= 0){
-    const parts = fk.split('__');
-    const sid = parts[0].replace(/X/g,'_');
-    const dateParts = (parts[1]||'').split('_');
-    const date = dateParts.length===3
-      ? dateParts[0]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[2].padStart(2,'0')
-      : (parts[1]||'').replace(/_/g,'-');
-    return sid+'__'+date;
-  }
-  // Formato antigo: mbw_2026_6_2 ou mbwm_2026_6_2
-  // Encontrar onde começa a data (sequência de 4 dígitos = ano)
+  // Encontrar onde começa a data (4 dígitos = ano)
   const m = fk.match(/^(.+?)_(\d{4})_(\d{1,2})_(\d{1,2})$/);
   if(m){
-    const sid = m[1].replace(/X/g,'_');
+    const sid = m[1].replace(/-/g,'_'); // mbw-m → mbw_m
     const date = m[2]+'-'+m[3].padStart(2,'0')+'-'+m[4].padStart(2,'0');
     return sid+'__'+date;
   }
