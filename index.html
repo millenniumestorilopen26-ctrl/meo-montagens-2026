@@ -541,6 +541,26 @@ function getModalRoot(){
 const CLOUDINARY_CLOUD = 'dbcuonkqy';
 const CLOUDINARY_PRESET = 'meo2026';
 
+// Teste Cloudinary - chamar da consola: testCloudinary()
+window.testCloudinary = async function(){
+  showToast('🔄 A testar Cloudinary...');
+  // Criar imagem de teste 100x100
+  const canvas = document.createElement('canvas');
+  canvas.width=100; canvas.height=100;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle='#FFEC1A'; ctx.fillRect(0,0,100,100);
+  ctx.fillStyle='#E91E8C'; ctx.fillRect(25,25,50,50);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+  try{
+    const url = await uploadToCloudinary(dataUrl, 'teste_meo2026.jpg');
+    showToast('✅ Cloudinary OK! '+url.substring(0,50));
+    console.log('Cloudinary URL:', url);
+  }catch(e){
+    showToast('❌ Cloudinary FALHOU: '+e.message);
+    console.error('Cloudinary erro:', e);
+  }
+};
+
 async function uploadToCloudinary(dataUrl, filename){
   // Convert dataUrl to blob
   const res = await fetch(dataUrl);
