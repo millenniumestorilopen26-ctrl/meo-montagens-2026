@@ -665,16 +665,7 @@ async function loadRecordsFromFirebase(){
         if(!_recCache[key].photos) _recCache[key].photos = [];
         // Firebase photos have Cloudinary URLs - these are shared across all devices
         // Local storage may have more recent uploads not yet in Firebase
-        try{
-          const lp = localStorage.getItem('meo_photos_'+key);
-          if(lp){
-            const localPhotos = JSON.parse(lp);
-            // Merge: if local has more photos, use local (includes recently uploaded)
-            if(localPhotos.length >= _recCache[key].photos.length){
-              _recCache[key].photos = localPhotos;
-            }
-          }
-        }catch(e){}
+        // Firebase é fonte de verdade — não sobrescrever com localStorage
       });
     }
   }catch(e){console.warn('Firebase load records:', e);}
@@ -754,6 +745,7 @@ function startRealtimeSync(){
     const data = snap.val();
     if(!data) return;
     let updated = false;
+    const updatedSids = new Set();
     Object.entries(data).forEach(([k, v])=>{
       const key = k.replace('_','__');
       const incoming = {...(v||{}), photos:(v&&v.photos)||[]};
@@ -768,12 +760,19 @@ function startRealtimeSync(){
       incoming.photos = merged;
       if(JSON.stringify(_recCache[key])!==JSON.stringify(incoming)){
         _recCache[key]=incoming; updated=true;
+        // Extrair sid da chave (ex: mbw__2026-06-02 → mbw)
+        updatedSids.add(key.split('__')[0]);
       }
     });
     if(updated){
       if(state.page==='dashboard') renderDash();
       if(state.page==='mapa')      renderGantt();
-      if(state.page==='registo')   renderReg();
+      if(state.page==='registo'){
+        // Nunca renderReg() completo — só actualizar fotos por fornecedor
+        updatedSids.forEach(sid=>{
+          renderRegPhotosOnly(sid, TODAY);
+        });
+      }
       if(state.page==='relatorio') renderRel();
     }
   });
