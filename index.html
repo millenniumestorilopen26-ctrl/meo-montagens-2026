@@ -2373,8 +2373,15 @@ function renderRel(){
       const{cls,lbl}=pBadge(r.prog,r.att);
       const attC=r.att==='presente'?'#1a9e4a':r.att==='parcial'?'#d97706':r.att==='ausente'?'#e02020':'#aaa';
 
-      // Tarefas com % por tarefa
-      const schedTasks = getSchedAct(r.s.id, RD).split('\n').filter(Boolean);
+      // Tarefas com % por tarefa - mostrar todas incluindo concluídas
+      const schedTasksActive = getSchedAct(r.s.id, RD).split('\n').filter(Boolean);
+      // Tarefas concluídas para este fornecedor
+      const sidEntriesRel = SCHED_ENTRIES.filter(e=>e.sid===r.s.id);
+      const doneTasksRel = _doneTasks[r.s.id]||[];
+      const schedTasksConcluidas = sidEntriesRel
+        .filter((e,i)=>doneTasksRel[i] && e.act)
+        .map(e=>'✅ '+e.act);
+      const schedTasks = [...schedTasksActive, ...schedTasksConcluidas];
       const taskProgs = r.taskProgs || {};
       const tasksHtml = schedTasks.length > 0 ?
         '<div style="margin-bottom:9px">'+
