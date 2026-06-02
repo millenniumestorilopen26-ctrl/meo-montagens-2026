@@ -653,15 +653,7 @@ function setRec(sid, d, data){
   const r = _recCache[k];
   const toSave = {att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
     photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
-  console.log('[setRec]',k,'fotos:',(r.photos||[]).length);
-  const _fbSize = JSON.stringify(toSave).length;
-  console.log('[Firebase] A guardar',k,'tamanho:',Math.round(_fbSize/1024)+'KB');
-  fbUpdate('records/'+k.replace('__','_'), toSave).then(()=>{
-    console.log('[Firebase] ✅ Guardado com sucesso');
-  }).catch(e=>{
-    console.error('[Firebase] ❌ ERRO ao guardar:',e);
-    showToast('❌ Erro Firebase: '+e.message);
-  });
+  fbUpdate('records/'+k.replace('__','_'), toSave).catch(e=>console.warn('Firebase:', e));
 
   // Cloudinary em background para fotos base64 (não bloqueia)
   const newBase64 = (r.photos||[]).filter(p=>p.dataUrl&&p.dataUrl.startsWith('data:'));
@@ -791,7 +783,6 @@ function startRealtimeSync(){
         // Extrair sid da chave (ex: mbw__2026-06-02 → mbw)
         const sidX=key.split('__')[0];
         updatedSids.add(sidX);
-        console.log('[SYNC] Firebase update para',sidX,'fotos:',incoming.photos.length);
       }
     });
     if(updated){
@@ -2104,14 +2095,12 @@ function renderReg(){
           const compressed=canvas.toDataURL('image/jpeg',0.85);
           const origKB=Math.round(ev.target.result.length/1024);
           const compKB=Math.round(compressed.length/1024);
-          console.log('[FOTO] Original:'+origKB+'KB → Comprimida:'+compKB+'KB');
           const r=getRec(sid,TODAY);
           const newPhoto={type:'Foto',desc:file.name||'Foto',
             ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
             dataUrl:compressed};
           const photos=[...(r.photos||[]), newPhoto];
-          showToast('📸 Foto '+(photos.length)+' guardada ('+compKB+'KB)');
-          setRec(sid,TODAY,{photos});
+            setRec(sid,TODAY,{photos});
           renderRegPhotosOnly(sid,TODAY);
         };
         img.src=ev.target.result;
