@@ -627,6 +627,20 @@ const _recCache = {};
 function dkey(sid, d){
   return sid+'__'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+// Converter chave interna para chave Firebase (sem __ e sem -)
+function toFbKey(k){
+  const parts = k.split('__');
+  const sid = parts[0].replace(/_/g,'X'); // mbw_m → mbwXm
+  const date = (parts[1]||'').replace(/-/g,'_');
+  return sid+'__'+date;
+}
+// Converter chave Firebase de volta para chave interna
+function fromFbKey(fk){
+  const parts = fk.split('__');
+  const sid = parts[0].replace(/X/g,'_'); // mbwXm → mbw_m
+  const date = (parts[1]||'').replace(/_/g,'-');
+  return sid+'__'+date;
+}
 
 function getRec(sid, d){
   const k = dkey(sid, d);
@@ -653,7 +667,7 @@ function setRec(sid, d, data){
   const r = _recCache[k];
   const toSave = {att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
     photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
-  fbUpdate('records/'+k.replace('__','_'), toSave).catch(e=>console.warn('Firebase:', e));
+  fbUpdate('records/'+toFbKey(k), toSave).catch(e=>console.warn('Firebase:', e));
 
   // Cloudinary em background para fotos base64 (não bloqueia)
   const newBase64 = (r.photos||[]).filter(p=>p.dataUrl&&p.dataUrl.startsWith('data:'));
@@ -666,7 +680,7 @@ function setRec(sid, d, data){
     })).then(()=>{
       const toSave2={att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
         photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
-      fbUpdate('records/'+k.replace('__','_'), toSave2).catch(()=>{});
+      fbUpdate('records/'+toFbKey(k), toSave2).catch(()=>{});
       if(state.page==='registo') renderRegPhotosOnly(sid,d);
       if(state.page==='relatorio') renderRel();
     });
@@ -679,7 +693,7 @@ async function loadRecordsFromFirebase(){
     const data = await fbGet('records');
     if(data){
       Object.entries(data).forEach(([k, v])=>{
-        const key = k.replace('_','__');
+        const key = fromFbKey(k);
         _recCache[key] = {...(v||{})};
         // Ensure photos array exists with proper Cloudinary URLs
         if(!_recCache[key].photos) _recCache[key].photos = [];
@@ -767,7 +781,7 @@ function startRealtimeSync(){
     let updated = false;
     const updatedSids = new Set();
     Object.entries(data).forEach(([k, v])=>{
-      const key = k.replace('_','__');
+      const key = fromFbKey(k);
       const incoming = {...(v||{}), photos:(v&&v.photos)||[]};
       // Merge fotos: manter as locais + adicionar novas do Firebase
       const localPhotos = (_recCache[key]&&_recCache[key].photos)||[];
