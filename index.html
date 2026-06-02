@@ -2126,11 +2126,20 @@ function renderReg(){
       if(!file.type.startsWith('image/'))return;
       const reader=new FileReader();
       reader.onload=ev=>{
-        const now=new Date();const r=getRec(sid,TODAY);
-        const photos=[...(r.photos||[]),{type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result}];
-        setRec(sid,TODAY,{photos});renderReg();
+        const now=new Date();
+        // Ler o estado ACTUAL do cache (não capturar antes do loop)
+        const r=getRec(sid,TODAY);
+        const existingPhotos=r.photos||[];
+        const newPhoto={type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result};
+        // Adicionar ao array existente (não substituir)
+        const photos=[...existingPhotos, newPhoto];
+        setRec(sid,TODAY,{photos});
+        // renderRegPhotosOnly em vez de renderReg (não destrói os inputs)
+        renderRegPhotosOnly(sid,TODAY);
       };reader.readAsDataURL(file);
     });
+    // Reset input para permitir seleccionar o mesmo ficheiro novamente
+    e.target.value='';
   }));
   document.querySelectorAll('.ph-del').forEach(btn=>btn.addEventListener('click',e=>{
     e.stopPropagation();const sid=btn.dataset.sid,pi=parseInt(btn.dataset.pi);
@@ -2750,7 +2759,12 @@ function openPhotoModal(sid,dateStr){
           const reader=new FileReader();
           reader.onload=ev=>{
             const now=new Date();
-            photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
+            // Reler fotos do cache para evitar race condition
+            const curPhotos=getRec(modalSid,TODAY).photos||[];
+            if(!photos.find(p=>p.dataUrl===ev.target.result)){
+              photos.length=0;curPhotos.forEach(p=>photos.push(p));
+              photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
+            }
             setRec(sid,d,{photos:[...photos]});
             showToast('📸 Foto guardada!');
             // Auto-save and return to map
@@ -2820,7 +2834,12 @@ function openDayModal(sid,d){
           const reader=new FileReader();
           reader.onload=ev=>{
             const now=new Date();
-            photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
+            // Reler fotos do cache para evitar race condition
+            const curPhotos=getRec(modalSid,TODAY).photos||[];
+            if(!photos.find(p=>p.dataUrl===ev.target.result)){
+              photos.length=0;curPhotos.forEach(p=>photos.push(p));
+              photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
+            }
             setRec(sid,d,{photos:[...photos]});
             showToast('📸 Foto adicionada! A guardar...');
             draw();
