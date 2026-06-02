@@ -590,86 +590,77 @@ function fbPush(path, data){
   return db.ref(path).push(data);
 }
 
-// ── FIREBASE STORAGE (photos) ─────────────────────────────────────────────
-async function uploadPhoto(dataUrl, path){
-  // dataUrl → Blob → Firebase Storage
-  const res = await fetch(dataUrl);
-  const blob = await res.blob();
-  const ref = storage.ref(path);
-  await ref.put(blob);
-  return await ref.getDownloadURL();
-}
-
-// ── OVERRIDE getRec/setRec TO USE FIREBASE ────────────────────────────────
-// Cache locally for performance, sync to Firebase
+// ═══════════════════════════════════════════════════════════════
+// DATA LAYER — Firebase é a única fonte de verdade
+// Arquitectura: Firebase → _recCache → UI
+// Fotos: base64 → Firebase imediato → Cloudinary em background
+// ═══════════════════════════════════════════════════════════════
 const _recCache = {};
 
 function dkey(sid, d){
   return sid+'__'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+// Chave Firebase: converte __ e - para _ (compatibilidade)
+function fbKey(k){ return k.replace('__','_').replace(/-/g,'_'); }
+
 function getRec(sid, d){
   const k = dkey(sid, d);
-  const rec = {...(_recCache[k] || {att:'', prog:0, act:'', obs:'', photos:[]})};
-  // Photos: prefer Firebase (Cloudinary URLs) over localStorage (may have base64)
-  const firebasePhotos = _recCache[k]?.photos || [];
-  if(firebasePhotos.length > 0){
-    rec.photos = firebasePhotos;
-  } else {
-    // Fallback to localStorage
-    try{const lp=localStorage.getItem('meo_photos_'+k);if(lp)rec.photos=JSON.parse(lp);}catch(e){}
-  }
-  return rec;
+  return {
+    att:'', prog:0, act:'', obs:'', photos:[], taskProgs:{},
+    ...(_recCache[k] || {})
+  };
 }
-
-// Tracking de escritas locais para evitar overwrite pelo realtimeSync
-const _lastLocalWrite = {};
 
 function setRec(sid, d, data){
   const k = dkey(sid, d);
-  const prev = _recCache[k] || {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
+  // Actualizar cache
+  _recCache[k] = {
+    att:'', prog:0, act:'', obs:'', photos:[], taskProgs:{},
+    ...(_recCache[k] || {}),
+    ...data
+  };
+  // Guardar no Firebase imediatamente (fonte de verdade)
+  _saveRecToFirebase(k);
+}
 
-  // Para fotos: o array passado JÁ é o array completo (construído no handler)
-  // Não fazer merge aqui — evita duplicações e race conditions
-  _recCache[k] = {...prev, ...data};
-  const photos = _recCache[k].photos || [];
+function _saveRecToFirebase(k){
+  const r = _recCache[k];
+  if(!r) return;
+  const toSave = {
+    att: r.att||'',
+    prog: r.prog||0,
+    act: r.act||'',
+    obs: r.obs||'',
+    taskProgs: r.taskProgs||{},
+    photos: (r.photos||[]).map(p=>({
+      type: p.type||'Foto',
+      desc: p.desc||'',
+      ts:   p.ts||'',
+      dataUrl: p.dataUrl||''
+    }))
+  };
+  db.ref('records/'+fbKey(k)).set(toSave).catch(e=>console.warn('Firebase set:', e));
+}
 
-  // Marcar escrita local (bloqueia realtimeSync por 10s)
-  _lastLocalWrite[k] = Date.now();
-
-  // Guardar no localStorage imediatamente
-  try{localStorage.setItem('meo_photos_'+k, JSON.stringify(photos));}catch(e){}
-
-  function syncToFirebase(){
-    const toSync = {
-      att:_recCache[k].att||'',
-      prog:_recCache[k].prog||0,
-      act:_recCache[k].act||'',
-      obs:_recCache[k].obs||'',
-      taskProgs:_recCache[k].taskProgs||{},
-      photos:(_recCache[k].photos||[]).map(p=>({
-        type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',
-        dataUrl:p.dataUrl||'',cloudinary:!!p.cloudinary
-      }))
-    };
-    fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
-  }
-
-  // Upload Cloudinary para fotos base64 novas (não bloqueia o UI)
-  const newBase64 = photos.filter(p => p.dataUrl && p.dataUrl.startsWith('data:'));
-  if(newBase64.length > 0){
-    // Sync imediato com base64 (para não perder se sair da app)
-    syncToFirebase();
-    // Depois upload Cloudinary em background
-    Promise.all(newBase64.map(async p => {
-      try{
-        const url = await uploadToCloudinary(p.dataUrl, p.desc||'foto.jpg');
-        p.dataUrl = url; p.cloudinary = true;
-        try{localStorage.setItem('meo_photos_'+k, JSON.stringify(_recCache[k].photos||[]));}catch(e){}
-      }catch(e){ console.warn('Cloudinary falhou, base64 mantido:', e); }
-    })).then(()=>{ syncToFirebase(); });
-  } else {
-    syncToFirebase();
+// Adicionar uma foto a um registo (operação atómica)
+async function addPhoto(sid, d, photoObj){
+  const k = dkey(sid, d);
+  if(!_recCache[k]) _recCache[k] = {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
+  // Adicionar ao cache
+  _recCache[k].photos = [...(_recCache[k].photos||[]), photoObj];
+  // Guardar no Firebase imediatamente com base64
+  await _saveRecToFirebase(k);
+  // Tentar upload Cloudinary em background (não bloqueia)
+  if(photoObj.dataUrl && photoObj.dataUrl.startsWith('data:')){
+    uploadToCloudinary(photoObj.dataUrl, photoObj.desc||'foto.jpg').then(url=>{
+      // Encontrar a foto no cache e actualizar URL
+      const idx = (_recCache[k].photos||[]).findIndex(p=>p.ts===photoObj.ts&&p.desc===photoObj.desc);
+      if(idx>=0){
+        _recCache[k].photos[idx].dataUrl = url;
+        _saveRecToFirebase(k);
+      }
+    }).catch(()=>{}); // falha silenciosa — base64 já está guardado
   }
 }
 
@@ -679,27 +670,25 @@ async function loadRecordsFromFirebase(){
     const data = await fbGet('records');
     if(data){
       Object.entries(data).forEach(([k, v])=>{
-        const key = k.replace('_','__');
-        _recCache[key] = {...(v||{})};
-        // Ensure photos array exists with proper Cloudinary URLs
-        if(!_recCache[key].photos) _recCache[key].photos = [];
-        // Firebase photos have Cloudinary URLs - these are shared across all devices
-        // Local storage may have more recent uploads not yet in Firebase
-        try{
-          const lp = localStorage.getItem('meo_photos_'+key);
-          if(lp){
-            const localPhotos = JSON.parse(lp);
-            // Merge aditivo: combinar Firebase + local, dedup por ts+desc
-            const fbP = _recCache[key].photos || [];
-            const seen = new Set();
-            const merged = [...fbP, ...localPhotos].filter(p=>{
-              const dk = (p.ts||'')+'|'+(p.desc||'')+'|'+(p.type||'');
-              if(seen.has(dk))return false;
-              seen.add(dk);return true;
-            });
-            _recCache[key].photos = merged;
-          }
-        }catch(e){}
+        // Converter chave Firebase (underscores) para chave interna (__ e -)
+        // Formato Firebase: sid_yyyy_m_d  →  sid__yyyy-mm-dd
+        const parts = k.split('_');
+        // Encontrar onde começa a data (4 dígitos = ano)
+        let sidParts = [], dateParts = [];
+        let dateStarted = false;
+        for(const p of parts){
+          if(!dateStarted && /^\d{4}$/.test(p)){ dateStarted = true; }
+          if(dateStarted) dateParts.push(p);
+          else sidParts.push(p);
+        }
+        const sid = sidParts.join('_');
+        const key = dateParts.length===3
+          ? sid+'__'+dateParts[0]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[2].padStart(2,'0')
+          : k.replace('_','__');
+        _recCache[key] = {
+          att:'', prog:0, act:'', obs:'', photos:[], taskProgs:{},
+          ...(v||{})
+        };
       });
     }
   }catch(e){console.warn('Firebase load records:', e);}
@@ -774,30 +763,27 @@ async function loadContactsFromFirebase(){
 
 // ── REAL-TIME LISTENERS ───────────────────────────────────────────────────
 function startRealtimeSync(){
-  // Listen for record changes from other devices
+  // Firebase é a fonte de verdade — actualizar cache e UI quando Firebase muda
   db.ref('records').on('value', snap=>{
     const data = snap.val();
     if(!data) return;
     let updated = false;
-    const now = Date.now();
     Object.entries(data).forEach(([k, v])=>{
-      const key = k.replace('_','__');
-      // Ignorar updates do Firebase nos primeiros 10s após uma escrita local
-      // (evita sobrescrever fotos recém-adicionadas com echo do Firebase)
-      if(_lastLocalWrite && _lastLocalWrite[key] && (now - _lastLocalWrite[key]) < 10000) return;
-      const fbPhotos = (v.photos||[]);
-      const localPhotos = _recCache[key] ? (_recCache[key].photos||[]) : [];
-      // Merge aditivo: combinar fotos do Firebase com locais
-      const seen = new Set();
-      const mergedPhotos = [...localPhotos, ...fbPhotos].filter(p=>{
-        const dk = (p.ts||'')+'|'+(p.desc||'');
-        if(seen.has(dk)) return false;
-        seen.add(dk); return true;
-      });
-      const newRec = {...v, photos: mergedPhotos};
+      // Converter chave Firebase para chave interna
+      const parts = k.split('_');
+      let sidParts=[], dateParts=[], dateStarted=false;
+      for(const p of parts){
+        if(!dateStarted && /^\d{4}$/.test(p)) dateStarted=true;
+        if(dateStarted) dateParts.push(p); else sidParts.push(p);
+      }
+      const sid = sidParts.join('_');
+      const key = dateParts.length===3
+        ? sid+'__'+dateParts[0]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[2].padStart(2,'0')
+        : k.replace('_','__');
+      const newRec = {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{},...(v||{})};
+      // Só actualizar se os dados mudaram (evita render loop)
       if(JSON.stringify(_recCache[key]) !== JSON.stringify(newRec)){
         _recCache[key] = newRec;
-        try{localStorage.setItem('meo_photos_'+key, JSON.stringify(mergedPhotos));}catch(e){}
         updated = true;
       }
     });
@@ -2107,20 +2093,16 @@ function renderReg(){
     Array.from(e.target.files||[]).forEach(file=>{
       if(!file.type.startsWith('image/'))return;
       const reader=new FileReader();
-      reader.onload=ev=>{
+      reader.onload=async ev=>{
         const now=new Date();
-        // Ler o estado ACTUAL do cache (não capturar antes do loop)
-        const r=getRec(sid,TODAY);
-        const existingPhotos=r.photos||[];
-        const newPhoto={type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result};
-        // Adicionar ao array existente (não substituir)
-        const photos=[...existingPhotos, newPhoto];
-        setRec(sid,TODAY,{photos});
-        // renderRegPhotosOnly em vez de renderReg (não destrói os inputs)
+        const photo={type:'Foto',desc:file.name||'Foto',
+          ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+          dataUrl:ev.target.result};
+        await addPhoto(sid,TODAY,photo);
         renderRegPhotosOnly(sid,TODAY);
-      };reader.readAsDataURL(file);
+      };
+      reader.readAsDataURL(file);
     });
-    // Reset input para permitir seleccionar o mesmo ficheiro novamente
     e.target.value='';
   }));
   document.querySelectorAll('.ph-del').forEach(btn=>btn.addEventListener('click',e=>{
@@ -2739,14 +2721,16 @@ function openPhotoModal(sid,dateStr){
         Array.from(e.target.files||[]).forEach(file=>{
           if(!file.type.startsWith('image/'))return;
           const reader=new FileReader();
-          reader.onload=ev=>{
+          reader.onload=async ev=>{
             const now=new Date();
-            // Reler fotos do cache para evitar race condition
-            const curPhotos=getRec(modalSid,TODAY).photos||[];
-            if(!photos.find(p=>p.dataUrl===ev.target.result)){
-              photos.length=0;curPhotos.forEach(p=>photos.push(p));
-              photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
-            }
+            const photo={type:'Foto',desc:file.name||'Foto',
+              ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+              dataUrl:ev.target.result};
+            await addPhoto(modalSid,TODAY,photo);
+            // Sincronizar array local do modal com cache
+            const updatedPhotos=getRec(modalSid,TODAY).photos||[];
+            photos.length=0; updatedPhotos.forEach(p=>photos.push(p));
+            {
             setRec(sid,d,{photos:[...photos]});
             showToast('📸 Foto guardada!');
             // Auto-save and return to map
@@ -2814,14 +2798,16 @@ function openDayModal(sid,d){
         Array.from(e.target.files||[]).forEach(file=>{
           if(!file.type.startsWith('image/'))return;
           const reader=new FileReader();
-          reader.onload=ev=>{
+          reader.onload=async ev=>{
             const now=new Date();
-            // Reler fotos do cache para evitar race condition
-            const curPhotos=getRec(modalSid,TODAY).photos||[];
-            if(!photos.find(p=>p.dataUrl===ev.target.result)){
-              photos.length=0;curPhotos.forEach(p=>photos.push(p));
-              photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
-            }
+            const photo={type:'Foto',desc:file.name||'Foto',
+              ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+              dataUrl:ev.target.result};
+            await addPhoto(modalSid,TODAY,photo);
+            // Sincronizar array local do modal com cache
+            const updatedPhotos=getRec(modalSid,TODAY).photos||[];
+            photos.length=0; updatedPhotos.forEach(p=>photos.push(p));
+            {
             setRec(sid,d,{photos:[...photos]});
             showToast('📸 Foto adicionada! A guardar...');
             draw();
