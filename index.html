@@ -639,11 +639,31 @@ function toFbKey(k){
 }
 
 function fromFbKey(fk){
-  // "7cores_2026-05-25" → "7cores__2026-05-25"
-  // "mbw_m_2026-06-02" → "mbw_m__2026-06-02"
-  // Encontrar _YYYY- como âncora (data começa com 4 dígitos + traço)
-  const m = fk.match(/^(.+?)_(\d{4}-\d{2}-\d{2})$/);
+  // Formato A: "irmarfer_2026-06-02"  → "irmarfer__2026-06-02"
+  // Formato B: "tlove__2026_08_17"    → "tlove__2026-08-17"
+  // Formato C: "mbwXm__2026_05_25"    → "mbw_m__2026-05-25" (legado)
+  // Formato D: "mbw-m_2026_8_6"       → "mbw_m__2026-08-06" (legado)
+
+  // Formato A: termina em _YYYY-MM-DD
+  let m = fk.match(/^(.+?)_(\d{4}-\d{2}-\d{2})$/);
   if(m) return m[1]+'__'+m[2];
+
+  // Formato B/C: contém __ seguido de data com underscores
+  m = fk.match(/^(.+?)__(\d{4})_(\d{1,2})_(\d{1,2})$/);
+  if(m){
+    const sid = m[1].replace(/X/g,'_');
+    const date = m[2]+'-'+m[3].padStart(2,'0')+'-'+m[4].padStart(2,'0');
+    return sid+'__'+date;
+  }
+
+  // Formato D: sid com traço, _YYYY_M_D
+  m = fk.match(/^(.+?)_(\d{4})_(\d{1,2})_(\d{1,2})$/);
+  if(m){
+    const sid = m[1].replace(/-/g,'_');
+    const date = m[2]+'-'+m[3].padStart(2,'0')+'-'+m[4].padStart(2,'0');
+    return sid+'__'+date;
+  }
+
   return fk;
 }
 
