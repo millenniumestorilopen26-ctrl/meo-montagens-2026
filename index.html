@@ -628,6 +628,24 @@ async function uploadPhoto(dataUrl, path){
 // ── OVERRIDE getRec/setRec TO USE FIREBASE ────────────────────────────────
 // Cache locally for performance, sync to Firebase
 const _recCache = {};
+const _doneTasks = {}; // {sid: [false, true, false, ...]} tarefas concluídas
+
+async function markTaskDone(sid, taskIdx, done){
+  if(!_doneTasks[sid]) _doneTasks[sid] = [];
+  _doneTasks[sid][taskIdx] = done;
+  await db.ref('doneTasks/'+sid).set(_doneTasks[sid]).catch(()=>{});
+  if(state.page==='registo') renderReg();
+  if(state.page==='mapa') renderGantt();
+  if(state.page==='gestao') renderGestao();
+  showToast(done ? '✅ Tarefa concluída!' : '↩️ Tarefa reaberta');
+}
+
+async function loadDoneTasksFromFirebase(){
+  try{
+    const data = await fbGet('doneTasks');
+    if(data) Object.entries(data).forEach(([sid,v])=>{ _doneTasks[sid]=v||[]; });
+  }catch(e){}
+}
 
 function dkey(sid, d){
   return sid+'__'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1833,12 +1851,21 @@ function centerOnToday(){
 }
 function getSchedAct(sid,d){
   const ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  const today=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()).getTime();
   const acts=[];
-  for(const e of SCHED_ENTRIES){
-    if(e.sid!==sid)continue;
+  const sidEntries=SCHED_ENTRIES.filter(x=>x.sid===sid);
+  const doneTasks=_doneTasks[sid]||[];
+  for(let i=0;i<sidEntries.length;i++){
+    const e=sidEntries[i];
+    if(!e.act)continue;
+    if(doneTasks[i])continue;
     const s=new Date(e.s[0],e.s[1],e.s[2]).getTime();
     const en=new Date(e.e[0],e.e[1],e.e[2]).getTime();
-    if(ds>=s&&ds<=en&&e.act)acts.push(e.act);
+    if(ds>=s&&ds<=en){acts.push(e.act);continue;}
+    if(ds>en&&ds<=today){
+      const rec=getRec(sid,new Date(en));
+      if(rec.prog<100) acts.push('⚠️ EM ATRASO — '+e.act);
+    }
   }
   return acts.join('\n');
 }
@@ -2058,7 +2085,12 @@ function renderReg(){
             '</div>'+
             '<div style="height:5px;background:#e5e7eb;border-radius:3px;margin-top:3px">'+
             '<div class="task-pbar-fill" style="height:100%;width:'+p+'%;background:'+sup.color+';border-radius:3px;transition:width .2s"></div>'+
-            '</div></div>';
+            '</div>'+
+            '<div style="margin-top:6px;text-align:right">'+
+            '<button class="task-done-btn" data-sid="'+sup.id+'" data-ti="'+i+'" '+
+            'style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;border:none;cursor:pointer;background:var(--green);color:#fff">'+
+            '✓ Concluída</button></div>'+
+            '</div>';
           }).join('')+'</div>';
         } else {
           taskHtml='<div class="fr2"><div><label class="flbl">Progresso: <strong id="pv-'+sup.id+'">'+r.prog+'%</strong></label>'+
@@ -2158,6 +2190,13 @@ function renderReg(){
       };reader.readAsDataURL(file);
     });
     e.target.value='';
+  }));
+  document.querySelectorAll('.task-done-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    const sid=btn.dataset.sid, ti=parseInt(btn.dataset.ti);
+    const sidEntries=SCHED_ENTRIES.filter(x=>x.sid===sid);
+    const taskName=sidEntries[ti]?sidEntries[ti].act:'tarefa';
+    if(!confirm('Marcar "'+taskName+'" como concluída?\nDeixará de aparecer no mapa e registo diário.'))return;
+    markTaskDone(sid,ti,true);
   }));
   document.querySelectorAll('.ph-del').forEach(btn=>btn.addEventListener('click',e=>{
     e.stopPropagation();const sid=btn.dataset.sid,pi=parseInt(btn.dataset.pi);
@@ -2549,9 +2588,38 @@ function renderGestao(){
     '<div><div style="font-size:15px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Gestão de Fornecedores</div>'+
     '<div style="font-size:12px;color:var(--text3)">Edita informações, datas e operações de cada fornecedor</div></div>'+
     '<button class="btn btn-dark" id="gst-new"><i class="ti ti-plus"></i>Novo Fornecedor</button></div>'+
-    '<div id="gst-list">'+SUPS.map(sup=>renderSupCard(sup)).join('')+'</div>';
+    '<div id="gst-list">'+SUPS.map(sup=>renderSupCard(sup)).join('')+'</div>'+
+    renderDoneTasksPanel();
   document.getElementById('gst-new').onclick=()=>openAddSup();
   bindGestaoEvents();
+  document.querySelectorAll('.task-reopen-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    const sid=btn.dataset.sid, ti=parseInt(btn.dataset.ti);
+    const sidEntries=SCHED_ENTRIES.filter(x=>x.sid===sid);
+    const taskName=sidEntries[ti]?sidEntries[ti].act:'tarefa';
+    if(!confirm('Reabrir "'+taskName+'"?'))return;
+    markTaskDone(sid,ti,false);
+  }));
+}
+
+function renderDoneTasksPanel(){
+  const items=[];
+  SUPS.forEach(sup=>{
+    const done=_doneTasks[sup.id]||[];
+    const entries=SCHED_ENTRIES.filter(e=>e.sid===sup.id);
+    entries.forEach((e,i)=>{if(done[i])items.push({sid:sup.id,name:sup.name,color:sup.color,ti:i,act:e.act});});
+  });
+  if(!items.length)return '';
+  return '<div class="card" style="margin-top:20px">'+
+    '<div class="ch"><div class="ct"><i class="ti ti-check"></i> Tarefas Concluídas ('+items.length+')</div></div>'+
+    '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Tarefas marcadas como concluídas — não aparecem no mapa nem no registo.</div>'+
+    items.map(item=>
+      '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'+
+      '<div class="sdot" style="background:'+item.color+'"></div>'+
+      '<div style="flex:1"><div style="font-size:12px;font-weight:700">'+item.name+'</div>'+
+      '<div style="font-size:11px;color:var(--text3)">'+item.act+'</div></div>'+
+      '<button class="task-reopen-btn btn btn-out btn-sm" data-sid="'+item.sid+'" data-ti="'+item.ti+'">'+
+      '<i class="ti ti-rotate"></i> Reabrir</button></div>'
+    ).join('')+'</div>';
 }
 
 function renderSupCard(sup){
@@ -3719,7 +3787,8 @@ function launchApp(){
     loadRecordsFromFirebase(),
     loadContactsFromFirebase(),
     loadUsersFromFirebase().then(u=>{if(u){}}),
-    loadSupsFromFirebase()
+    loadSupsFromFirebase(),
+    loadDoneTasksFromFirebase()
   ]).then(()=>{
     // Garantir que mbw_m existe no SUPS (pode ter sido perdido no Firebase)
     if(!SUPS.find(s=>s.id==='mbw_m')){
