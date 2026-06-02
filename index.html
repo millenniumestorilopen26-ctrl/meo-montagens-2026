@@ -1532,10 +1532,12 @@ function fmtFull(ds){if(!ds)return'—';const d=new Date(ds+'T12:00:00');return 
 function a2i(a){if(!a||a.length<3)return'';return a[0]+'-'+String(a[1]).padStart(2,'0')+'-'+String(a[2]).padStart(2,'0');}
 function ds2a(s){if(!s)return null;const d=new Date(s+'T12:00:00');return[d.getFullYear(),d.getMonth(),d.getDate()];}
 function pColor(p){return p>=70?'#1a9e4a':p>=40?'#1a5fd4':p>=15?'#d97706':'#e02020';}
-function pBadge(p){
+function pBadge(p, att){
   if(p>=70)return{cls:'bdg-ok',lbl:'Avançado'};
   if(p>=40)return{cls:'bdg-wip',lbl:'Em curso'};
   if(p>=10)return{cls:'bdg-warn',lbl:'Atraso'};
+  // Se presente/parcial mas prog=0 → Em curso (está lá a trabalhar)
+  if(att==='presente'||att==='parcial')return{cls:'bdg-wip',lbl:'Em curso'};
   return{cls:'bdg-no',lbl:'Não iniciado'};
 }
 function zoneBadge(act){
@@ -2061,7 +2063,12 @@ function renderReg(){
       const rec=getRec(sid,TODAY);
       const progs=rec.taskProgs||{};
       progs[ti]=v;
-      setRec(sid,TODAY,{taskProgs:progs});
+      // Calcular prog geral = média das tarefas
+      const vals=Object.values(progs).filter(x=>typeof x==='number');
+      const avgProg=vals.length>0?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+      setRec(sid,TODAY,{taskProgs:progs,prog:avgProg});
+      // Actualizar label do prog geral se existir
+      const lbl=document.getElementById('pv-'+sid);if(lbl)lbl.textContent=avgProg+'%';
     });
     updateBar();
   });
@@ -2277,7 +2284,7 @@ function renderRel(){
     '<div class="ch" style="margin-bottom:14px"><div class="ct"><i class="ti ti-users"></i>Estado por Fornecedor</div></div>'+
     recs.map(r=>{
       const realPhotos=(r.photos||[]).filter(p=>p.dataUrl);const hasData=r.att||r.prog>0||r.act||r.obs||realPhotos.length>0;if(!hasData)return'';
-      const{cls,lbl}=pBadge(r.prog);
+      const{cls,lbl}=pBadge(r.prog,r.att);
       const attC=r.att==='presente'?'#1a9e4a':r.att==='parcial'?'#d97706':r.att==='ausente'?'#e02020':'#aaa';
 
       return'<div style="padding:12px 0;border-bottom:1px solid var(--border2)">'+
