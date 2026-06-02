@@ -633,6 +633,7 @@ function setRec(sid, d, data){
   const r = _recCache[k];
   const toSave = {att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
     photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
+  console.log('[setRec]',k,'fotos:',(r.photos||[]).length);
   fbUpdate('records/'+k.replace('__','_'), toSave).catch(e=>console.warn('Firebase:', e));
 
   // Cloudinary em background para fotos base64 (não bloqueia)
@@ -761,7 +762,9 @@ function startRealtimeSync(){
       if(JSON.stringify(_recCache[key])!==JSON.stringify(incoming)){
         _recCache[key]=incoming; updated=true;
         // Extrair sid da chave (ex: mbw__2026-06-02 → mbw)
-        updatedSids.add(key.split('__')[0]);
+        const sidX=key.split('__')[0];
+        updatedSids.add(sidX);
+        console.log('[SYNC] Firebase update para',sidX,'fotos:',incoming.photos.length);
       }
     });
     if(updated){
@@ -2063,12 +2066,16 @@ function renderReg(){
       reader.onload=ev=>{
         const now=new Date();
         const r=getRec(sid,TODAY);
+        const before=(r.photos||[]).length;
         const newPhoto={type:'Foto',desc:file.name||'Foto',
           ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
           dataUrl:ev.target.result};
         const photos=[...(r.photos||[]), newPhoto];
+        showToast('📸 A guardar foto '+(before+1)+'...');
         setRec(sid,TODAY,{photos});
         renderRegPhotosOnly(sid,TODAY);
+        const after=getRec(sid,TODAY).photos.length;
+        showToast('✅ Cache: '+after+' fotos (era '+before+')');
       };reader.readAsDataURL(file);
     });
     e.target.value='';
