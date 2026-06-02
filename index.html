@@ -590,77 +590,66 @@ function fbPush(path, data){
   return db.ref(path).push(data);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// DATA LAYER — Firebase é a única fonte de verdade
-// Arquitectura: Firebase → _recCache → UI
-// Fotos: base64 → Firebase imediato → Cloudinary em background
-// ═══════════════════════════════════════════════════════════════
+// ── FIREBASE STORAGE (photos) ─────────────────────────────────────────────
+async function uploadPhoto(dataUrl, path){
+  // dataUrl → Blob → Firebase Storage
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const ref = storage.ref(path);
+  await ref.put(blob);
+  return await ref.getDownloadURL();
+}
+
+// ── OVERRIDE getRec/setRec TO USE FIREBASE ────────────────────────────────
+// Cache locally for performance, sync to Firebase
 const _recCache = {};
 
 function dkey(sid, d){
   return sid+'__'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-// Chave Firebase: converte __ e - para _ (compatibilidade)
-function fbKey(k){ return k.replace('__','_').replace(/-/g,'_'); }
-
 function getRec(sid, d){
   const k = dkey(sid, d);
-  return {
-    att:'', prog:0, act:'', obs:'', photos:[], taskProgs:{},
-    ...(_recCache[k] || {})
-  };
+  const rec = {...(_recCache[k] || {att:'', prog:0, act:'', obs:'', photos:[]})};
+  // Photos: prefer Firebase (Cloudinary URLs) over localStorage (may have base64)
+  const firebasePhotos = _recCache[k]?.photos || [];
+  if(firebasePhotos.length > 0){
+    rec.photos = firebasePhotos;
+  } else {
+    // Fallback to localStorage
+    try{const lp=localStorage.getItem('meo_photos_'+k);if(lp)rec.photos=JSON.parse(lp);}catch(e){}
+  }
+  return rec;
 }
 
 function setRec(sid, d, data){
   const k = dkey(sid, d);
-  // Actualizar cache
-  _recCache[k] = {
-    att:'', prog:0, act:'', obs:'', photos:[], taskProgs:{},
-    ...(_recCache[k] || {}),
-    ...data
-  };
+  // Actualizar cache — fotos são aditivas se passadas como array novo
+  const prev = _recCache[k]||{att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
+  _recCache[k] = {...prev, ...data};
+  if(data.photos===undefined) _recCache[k].photos = prev.photos; // preservar fotos se não passadas
+
   // Guardar no Firebase imediatamente (fonte de verdade)
-  _saveRecToFirebase(k);
-}
-
-function _saveRecToFirebase(k){
   const r = _recCache[k];
-  if(!r) return;
-  const toSave = {
-    att: r.att||'',
-    prog: r.prog||0,
-    act: r.act||'',
-    obs: r.obs||'',
-    taskProgs: r.taskProgs||{},
-    photos: (r.photos||[]).map(p=>({
-      type: p.type||'Foto',
-      desc: p.desc||'',
-      ts:   p.ts||'',
-      dataUrl: p.dataUrl||''
-    }))
-  };
-  db.ref('records/'+fbKey(k)).set(toSave).catch(e=>console.warn('Firebase set:', e));
-}
+  const toSave = {att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
+    photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
+  fbUpdate('records/'+k.replace('__','_'), toSave).catch(e=>console.warn('Firebase:', e));
 
-// Adicionar uma foto a um registo (operação atómica)
-async function addPhoto(sid, d, photoObj){
-  const k = dkey(sid, d);
-  if(!_recCache[k]) _recCache[k] = {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
-  // Adicionar ao cache
-  _recCache[k].photos = [...(_recCache[k].photos||[]), photoObj];
-  // Guardar no Firebase imediatamente com base64
-  await _saveRecToFirebase(k);
-  // Tentar upload Cloudinary em background (não bloqueia)
-  if(photoObj.dataUrl && photoObj.dataUrl.startsWith('data:')){
-    uploadToCloudinary(photoObj.dataUrl, photoObj.desc||'foto.jpg').then(url=>{
-      // Encontrar a foto no cache e actualizar URL
-      const idx = (_recCache[k].photos||[]).findIndex(p=>p.ts===photoObj.ts&&p.desc===photoObj.desc);
-      if(idx>=0){
-        _recCache[k].photos[idx].dataUrl = url;
-        _saveRecToFirebase(k);
-      }
-    }).catch(()=>{}); // falha silenciosa — base64 já está guardado
+  // Cloudinary em background para fotos base64 (não bloqueia)
+  const newBase64 = (r.photos||[]).filter(p=>p.dataUrl&&p.dataUrl.startsWith('data:'));
+  if(newBase64.length>0){
+    Promise.all(newBase64.map(async p=>{
+      try{
+        const url = await uploadToCloudinary(p.dataUrl, p.desc||'foto.jpg');
+        p.dataUrl=url; p.cloudinary=true;
+      }catch(e){/* manter base64 */}
+    })).then(()=>{
+      const toSave2={att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
+        photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
+      fbUpdate('records/'+k.replace('__','_'), toSave2).catch(()=>{});
+      if(state.page==='registo') renderRegPhotosOnly(sid,d);
+      if(state.page==='relatorio') renderRel();
+    });
   }
 }
 
@@ -670,25 +659,22 @@ async function loadRecordsFromFirebase(){
     const data = await fbGet('records');
     if(data){
       Object.entries(data).forEach(([k, v])=>{
-        // Converter chave Firebase (underscores) para chave interna (__ e -)
-        // Formato Firebase: sid_yyyy_m_d  →  sid__yyyy-mm-dd
-        const parts = k.split('_');
-        // Encontrar onde começa a data (4 dígitos = ano)
-        let sidParts = [], dateParts = [];
-        let dateStarted = false;
-        for(const p of parts){
-          if(!dateStarted && /^\d{4}$/.test(p)){ dateStarted = true; }
-          if(dateStarted) dateParts.push(p);
-          else sidParts.push(p);
-        }
-        const sid = sidParts.join('_');
-        const key = dateParts.length===3
-          ? sid+'__'+dateParts[0]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[2].padStart(2,'0')
-          : k.replace('_','__');
-        _recCache[key] = {
-          att:'', prog:0, act:'', obs:'', photos:[], taskProgs:{},
-          ...(v||{})
-        };
+        const key = k.replace('_','__');
+        _recCache[key] = {...(v||{})};
+        // Ensure photos array exists with proper Cloudinary URLs
+        if(!_recCache[key].photos) _recCache[key].photos = [];
+        // Firebase photos have Cloudinary URLs - these are shared across all devices
+        // Local storage may have more recent uploads not yet in Firebase
+        try{
+          const lp = localStorage.getItem('meo_photos_'+key);
+          if(lp){
+            const localPhotos = JSON.parse(lp);
+            // Merge: if local has more photos, use local (includes recently uploaded)
+            if(localPhotos.length >= _recCache[key].photos.length){
+              _recCache[key].photos = localPhotos;
+            }
+          }
+        }catch(e){}
       });
     }
   }catch(e){console.warn('Firebase load records:', e);}
@@ -763,28 +749,25 @@ async function loadContactsFromFirebase(){
 
 // ── REAL-TIME LISTENERS ───────────────────────────────────────────────────
 function startRealtimeSync(){
-  // Firebase é a fonte de verdade — actualizar cache e UI quando Firebase muda
+  // Listen for record changes from other devices
   db.ref('records').on('value', snap=>{
     const data = snap.val();
     if(!data) return;
     let updated = false;
     Object.entries(data).forEach(([k, v])=>{
-      // Converter chave Firebase para chave interna
-      const parts = k.split('_');
-      let sidParts=[], dateParts=[], dateStarted=false;
-      for(const p of parts){
-        if(!dateStarted && /^\d{4}$/.test(p)) dateStarted=true;
-        if(dateStarted) dateParts.push(p); else sidParts.push(p);
-      }
-      const sid = sidParts.join('_');
-      const key = dateParts.length===3
-        ? sid+'__'+dateParts[0]+'-'+dateParts[1].padStart(2,'0')+'-'+dateParts[2].padStart(2,'0')
-        : k.replace('_','__');
-      const newRec = {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{},...(v||{})};
-      // Só actualizar se os dados mudaram (evita render loop)
-      if(JSON.stringify(_recCache[key]) !== JSON.stringify(newRec)){
-        _recCache[key] = newRec;
-        updated = true;
+      const key = k.replace('_','__');
+      const incoming = {...(v||{}), photos:(v&&v.photos)||[]};
+      // Merge fotos: manter as locais + adicionar novas do Firebase
+      const localPhotos = (_recCache[key]&&_recCache[key].photos)||[];
+      const fbPhotos = incoming.photos;
+      const seen = new Set();
+      const merged = [...localPhotos,...fbPhotos].filter(p=>{
+        const dk=(p.ts||'')+'|'+(p.desc||'');
+        if(seen.has(dk))return false; seen.add(dk); return true;
+      });
+      incoming.photos = merged;
+      if(JSON.stringify(_recCache[key])!==JSON.stringify(incoming)){
+        _recCache[key]=incoming; updated=true;
       }
     });
     if(updated){
@@ -828,7 +811,12 @@ function startRealtimeSync(){
   });
 }
 
-// saveContacts com Firebase integrado em baixo
+// ── PATCH saveContacts to also sync Firebase ──────────────────────────────
+const _origSaveContacts = saveContacts;
+function saveContacts(){
+  _origSaveContacts();
+  saveContactsToFirebase();
+}
 
 // ── PATCH saveUsers to also sync Firebase ─────────────────────────────────
 const _origSaveUsers = saveUsers;
@@ -847,6 +835,7 @@ const MLONG = ['janeiro','fevereiro','março','abril','maio','junho','julho','ag
 
 SCHED_ENTRIES = [
   {sid:'innowave',s:[2026,1,25],e:[2026,2,3],act:'Parecer da Innowave ao nosso prompt e timings plataforma'},
+  {sid:'tlove',s:[2026,2,3],e:[2026,2,16],act:'Negociação comercial Innowave/M EO'},
   {sid:'innowave',s:[2026,2,16],e:[2026,3,2],act:'Desenvolvimento da plataforma'},
   {sid:'innowave',s:[2026,3,3],e:[2026,3,3],act:'Apresentação do backend da plataforma à 3Love'},
   {sid:'tlove',s:[2026,3,3],e:[2026,3,8],act:'Discussão, Inputs e Análise de backend de plataforma'},
@@ -856,15 +845,15 @@ SCHED_ENTRIES = [
   {sid:'7cores',s:[2026,4,25],e:[2026,7,31],act:'Manutenção e desmontagens CTE — CTE'},
   {sid:'7cores',s:[2026,4,25],e:[2026,4,26],act:'Derrubar muros de terreno externo — Terreno externo'},
   {sid:'mbw',s:[2026,4,25],e:[2026,4,30],act:'Montagem de bancada — Court Cascais'},
-  {sid:'mbw',s:[2026,4,25],e:[2026,4,25],act:'WC Staff M/F'},
-  {sid:'powershield',s:[2026,4,25],e:[2026,4,25],act:'P1 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA) — Entrada TV Compound'},
+  {sid:'mbw',s:[2026,4,25],e:[2026,7,31],act:'WC Staff M/F — Módulos'},
+  {sid:'powershield',s:[2026,4,25],e:[2026,7,15],act:'P1 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA) — Entrada TV Compound'},
   {sid:'mbw',s:[2026,4,25],e:[2026,4,26],act:'Descarga de material (Zona de Stock) — COZINHA'},
   {sid:'7cores',s:[2026,4,27],e:[2026,4,27],act:'Desmontagem de redes e lonas de fundo — Court Geza Torok'},
   {sid:'7cores',s:[2026,4,27],e:[2026,4,29],act:'Desmontagem de postes de iluminação e relva sintética pickleball'},
   {sid:'7cores',s:[2026,4,28],e:[2026,4,28],act:'Colocação de redes de fundo de substituição — Court Geza Torok'},
   {sid:'7cores',s:[2026,4,29],e:[2026,4,29],act:'Recolha de plantas da varanda — Piscina'},
   {sid:'cmc',s:[2026,4,30],e:[2026,4,30],act:'Entrega de baias baixas'},
-  {sid:'powershield',s:[2026,4,31],e:[2026,4,31],act:'P3 — Rotunda'},
+  {sid:'powershield',s:[2026,4,31],e:[2026,5,1],act:'P3 — Rotunda'},
   {sid:'mbw',s:[2026,5,1],e:[2026,7,23],act:'Montagem  e desmontagem de bancada — Court Geza Torok/Millennium'},
   {sid:'7cores',s:[2026,5,1],e:[2026,5,4],act:'Delimitação de obra com baias baixas — CTE'},
   {sid:'mbw',s:[2026,5,1],e:[2026,7,21],act:'Estaleiro MBW — Traseiras Court Cascais'},
@@ -873,29 +862,29 @@ SCHED_ENTRIES = [
   {sid:'7cores',s:[2026,5,1],e:[2026,5,3],act:'Desmontagem de corrimãos varanda — Piscina'},
   {sid:'7cores',s:[2026,5,1],e:[2026,5,3],act:'Colocação de baias baixas na varanda'},
   {sid:'tlove',s:[2026,5,1],e:[2026,7,15],act:'Condicionamento varanda sala de sócios'},
-  {sid:'mbw_m',s:[2026,5,1],e:[2026,5,1],act:'VIGILÂNCIA — Módulos'},
-  {sid:'mbw_m',s:[2026,5,3],e:[2026,5,3],act:'SEGURANÇA/VALET — Módulos'},
-  {sid:'mbw_m',s:[2026,5,3],e:[2026,5,3],act:'SALA MEETING ROOM — Módulos'},
+  {sid:'mbw',s:[2026,5,1],e:[2026,7,31],act:'VIGILÂNCIA — Módulos'},
+  {sid:'mbw',s:[2026,5,1],e:[2026,7,31],act:'SEGURANÇA/VALET — Módulos'},
+  {sid:'mbw',s:[2026,5,1],e:[2026,5,1],act:'SALA MEETING ROOM — Módulos'},
   {sid:'irmarfer',s:[2026,5,1],e:[2026,5,1],act:'TELA PROTECÇÃO PISCINA'},
-  {sid:'powershield',s:[2026,5,1],e:[2026,5,1],act:'P2 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA) — Entrada Portão'},
+  {sid:'powershield',s:[2026,5,1],e:[2026,7,15],act:'P2 - PONTO DE ENTRADA DE EQUIPAS (picagem com PDA) — Entrada Portão'},
   {sid:'7cores',s:[2026,5,2],e:[2026,5,3],act:'Desmontagem de pérgula — Passeio CTE'},
   {sid:'irmarfer',s:[2026,5,2],e:[2026,5,5],act:'ESTRADO 25X45'},
   {sid:'irmarfer',s:[2026,5,2],e:[2026,5,2],act:'VIGAS AÇO PISCINA'},
   {sid:'7cores',s:[2026,5,3],e:[2026,5,5],act:'Remoção de bancos e material envolvente do Estadio'},
   {sid:'mbw',s:[2026,5,3],e:[2026,5,12],act:'Bancada lateral Camarotes VIP (Poente) — Bancadas'},
   {sid:'7cores',s:[2026,5,4],e:[2026,5,4],act:'Desmontagem de mini-tenis/bate bolas'},
-  {sid:'powershield',s:[2026,5,5],e:[2026,5,5],act:'P4 — Terreno Cozinha/Muros'},
+  {sid:'powershield',s:[2026,5,5],e:[2026,7,10],act:'P4 — Terreno Cozinha/Muros'},
   {sid:'oneway',s:[2026,5,5],e:[2026,5,5],act:'Visita técnica ao espaço — Visita'},
-  {sid:'powershield',s:[2026,5,7],e:[2026,5,7],act:'P3 — Rotunda'},
+  {sid:'powershield',s:[2026,5,7],e:[2026,5,9],act:'P3 — Rotunda'},
   {sid:'irmarfer',s:[2026,5,8],e:[2026,5,12],act:'TENDA IGLO 25X45 CRISTAL'},
   {sid:'irmarfer',s:[2026,5,8],e:[2026,5,8],act:'ESTRADO 10X20'},
   {sid:'irmarfer',s:[2026,5,8],e:[2026,5,8],act:'ESTRADO 10X10'},
   {sid:'oneway',s:[2026,5,8],e:[2026,5,12],act:'Passagem de Guias para cabos — Montagem'},
   {sid:'7cores',s:[2026,5,8],e:[2026,5,12],act:'COLOCAÇÃO DE ALCATIFA — Camarotes Lateral'},
-  {sid:'mbw_m',s:[2026,5,9],e:[2026,5,9],act:'LAVA COPOS — Módulos'},
-  {sid:'mbw_m',s:[2026,5,9],e:[2026,5,9],act:'ARRECADAÇÃO FLAMINGO BOÉMIO — Módulos'},
-  {sid:'mbw_m',s:[2026,5,9],e:[2026,5,9],act:'WC SLICE LOUNGE — Módulos'},
-  {sid:'mbw_m',s:[2026,5,9],e:[2026,5,9],act:'REGIE — Módulos'},
+  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'LAVA COPOS — Módulos'},
+  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'ARRECADAÇÃO FLAMINGO BOÉMIO — Módulos'},
+  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'WC SLICE LOUNGE — Módulos'},
+  {sid:'mbw',s:[2026,5,9],e:[2026,5,9],act:'REGIE — Módulos'},
   {sid:'irmarfer',s:[2026,5,9],e:[2026,5,9],act:'TENDA MS10X20'},
   {sid:'irmarfer',s:[2026,5,9],e:[2026,5,9],act:'TENDA MS10X10'},
   {sid:'irmarfer',s:[2026,5,9],e:[2026,5,10],act:'MONTAGEM DE ESTRADO 29,375m x 49,375m'},
@@ -909,7 +898,7 @@ SCHED_ENTRIES = [
   {sid:'mbw',s:[2026,5,11],e:[2026,5,23],act:'Bancada Topo Camarotes (Norte) — Bancadas'},
   {sid:'irmarfer',s:[2026,5,12],e:[2026,5,12],act:'ILUMINAÇÃO DE STANDS'},
   {sid:'irmarfer',s:[2026,5,12],e:[2026,5,12],act:'MONTAGEM DE 1x CONE 5x5'},
-  {sid:'powershield',s:[2026,5,14],e:[2026,5,14],act:'P3 — Rotunda'},
+  {sid:'powershield',s:[2026,5,14],e:[2026,7,15],act:'P3 — Rotunda'},
   {sid:'irmarfer',s:[2026,5,15],e:[2026,5,18],act:'ESTRADO 25X35'},
   {sid:'irmarfer',s:[2026,5,15],e:[2026,5,15],act:'ESTRADO 20X20'},
   {sid:'7cores',s:[2026,5,15],e:[2026,5,16],act:'COLOCAÇÃO DE ALCATIFA — Camarotes Lateral'},
@@ -926,10 +915,10 @@ SCHED_ENTRIES = [
   {sid:'irmarfer',s:[2026,5,23],e:[2026,5,24],act:'ESTRADO 7,5X7,5 (WC SL RESTAURANT)'},
   {sid:'irmarfer',s:[2026,5,23],e:[2026,5,24],act:'TENDA MS7,5X7,5  (WC SL RESTAURANT)'},
   {sid:'7cores',s:[2026,5,23],e:[2026,5,24],act:'Colocação de Relva'},
-  {sid:'mbw_m',s:[2026,5,25],e:[2026,5,25],act:'WC SLICE RESTAURANT — Módulos'},
-  {sid:'mbw_m',s:[2026,5,25],e:[2026,5,25],act:'SEGURANÇA — Módulos'},
-  {sid:'mbw_m',s:[2026,5,25],e:[2026,5,25],act:'ESCRITÓRIO PRODUÇÃO — Módulos'},
-  {sid:'mbw_m',s:[2026,5,25],e:[2026,5,25],act:'ARRECADAÇÃO BOLAS/TOALHAS — Módulos'},
+  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'WC SLICE RESTAURANT — Módulos'},
+  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'SEGURANÇA — Módulos'},
+  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'ESCRITÓRIO PRODUÇÃO — Módulos'},
+  {sid:'mbw',s:[2026,5,25],e:[2026,5,25],act:'ARRECADAÇÃO BOLAS/TOALHAS — Módulos'},
   {sid:'irmarfer',s:[2026,5,25],e:[2026,5,25],act:'ESTRADO 8X8'},
   {sid:'irmarfer',s:[2026,5,25],e:[2026,5,25],act:'ESTRADO 12,5X15 (PREMIUM BAR)'},
   {sid:'7cores',s:[2026,5,25],e:[2026,5,26],act:'Colocação de Relva — Premium Bar até Wine Bar'},
@@ -943,20 +932,20 @@ SCHED_ENTRIES = [
   {sid:'irmarfer',s:[2026,6,1],e:[2026,6,1],act:'ESTRADO TERRAÇO PARA DECK  Cascais TERRACE'},
   {sid:'cores_irmarfer',s:[2026,6,2],e:[2026,6,29],act:'Montagem de Smash Area — Courts Piso Rápido'},
   {sid:'cores_irmarfer',s:[2026,6,2],e:[2026,6,29],act:'Montagem de Food Court — Courts sintéticos'},
-  {sid:'mbw_m',s:[2026,6,2],e:[2026,6,2],act:'PREMIUM BAR — Módulos'},
+  {sid:'mbw',s:[2026,6,2],e:[2026,6,2],act:'PREMIUM BAR — Módulos'},
   {sid:'irmarfer',s:[2026,6,2],e:[2026,6,6],act:'ESTRADO 50X35 (c/protecção piso)'},
   {sid:'irmarfer',s:[2026,6,2],e:[2026,6,2],act:'ESTRADO TERRAÇO 5X1,25 Cascais TERRACE'},
   {sid:'7cores',s:[2026,6,2],e:[2026,6,3],act:'Colocação de Relva'},
   {sid:'irmarfer',s:[2026,6,2],e:[2026,6,2],act:'CONE 5X5 x 2 c/caleiro (tv compound)'},
   {sid:'irmarfer',s:[2026,6,2],e:[2026,6,2],act:'ESTRADO 5X5 (apanha Bolas)'},
-  {sid:'powershield',s:[2026,6,2],e:[2026,6,2],act:'P5 — Saída FoodCourt'},
-  {sid:'mbw_m',s:[2026,6,3],e:[2026,6,3],act:'Módulo 4 arrecadações — Módulos'},
-  {sid:'mbw_m',s:[2026,6,3],e:[2026,6,3],act:'VESTIÁRIOS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,3],e:[2026,6,3],act:'ARRECADAÇÃO PARCEIROS — Módulos'},
+  {sid:'powershield',s:[2026,6,2],e:[2026,6,31],act:'P5 — Saída FoodCourt'},
+  {sid:'mbw',s:[2026,6,3],e:[2026,6,3],act:'Módulo 4 arrecadações — Módulos'},
+  {sid:'mbw',s:[2026,6,3],e:[2026,6,3],act:'VESTIÁRIOS — Módulos'},
+  {sid:'mbw',s:[2026,6,3],e:[2026,6,3],act:'ARRECADAÇÃO PARCEIROS — Módulos'},
   {sid:'irmarfer',s:[2026,6,3],e:[2026,6,3],act:'ESTRADO 10X10'},
   {sid:'irmarfer',s:[2026,6,3],e:[2026,6,3],act:'TENDA 10X10'},
   {sid:'irmarfer',s:[2026,6,3],e:[2026,6,3],act:'ALCATIFA'},
-  {sid:'powershield',s:[2026,6,4],e:[2026,6,4],act:'P10 — Saída Emergência Topo'},
+  {sid:'powershield',s:[2026,6,4],e:[2026,7,31],act:'P10 — Saída Emergência Topo'},
   {sid:'7cores',s:[2026,6,6],e:[2026,6,8],act:'Colocação de Relva'},
   {sid:'moove',s:[2026,6,6],e:[2026,6,31],act:'Condicionamento piso -1 — Sala de bridge'},
   {sid:'moove',s:[2026,6,6],e:[2026,6,31],act:'Condicionamento piso -1 — Sala de sócios'},
@@ -969,72 +958,72 @@ SCHED_ENTRIES = [
   {sid:'tlove',s:[2026,6,8],e:[2026,6,31],act:'Court de jogo — Court 3/CTE'},
   {sid:'mbw',s:[2026,6,8],e:[2026,6,31],act:'Montagem e desmontagem de bancada — Court 4'},
   {sid:'mbw',s:[2026,6,8],e:[2026,6,31],act:'Montagem Bancada — Court 7'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'CORREDOR STANDS (lado esquerdo smash area) — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'STAND PEQUENO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'CORREDOR STANDS (lado direito smash area) — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'BAR — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'RFM — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'SERVIÇOS MÉDICOS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'STAND H.LUZ COMERCIAL — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'STAND ALTANO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'CTE — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'PARCEIROS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'PARCEIROS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'POSTO DE COMANDO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,8],e:[2026,6,8],act:'CCTV — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CORREDOR STANDS (lado esquerdo smash area) — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STAND PEQUENO — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CORREDOR STANDS (lado direito smash area) — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STANDS — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'BAR — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'RFM — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'SERVIÇOS MÉDICOS — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STAND H.LUZ COMERCIAL — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'STAND ALTANO — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CTE — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'PARCEIROS — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'PARCEIROS — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'POSTO DE COMANDO — Módulos'},
+  {sid:'mbw',s:[2026,6,8],e:[2026,6,8],act:'CCTV — Módulos'},
   {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'DIVISÓRIAS PAINEL SANDWICH'},
   {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'LINÓLEO'},
   {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'ESTRADO 5x12,5 (porshe) c/escada'},
   {sid:'irmarfer',s:[2026,6,8],e:[2026,6,8],act:'c/escada'},
-  {sid:'powershield',s:[2026,6,8],e:[2026,6,8],act:'P6 — Posto de Segurança'},
-  {sid:'powershield',s:[2026,6,8],e:[2026,6,8],act:'P38 — Entrada Recinto'},
+  {sid:'powershield',s:[2026,6,8],e:[2026,6,31],act:'P6 — Posto de Segurança'},
+  {sid:'powershield',s:[2026,6,8],e:[2026,6,26],act:'P38 — Entrada Recinto'},
   {sid:'oneway',s:[2026,6,8],e:[2026,6,9],act:'Montagem Estruturas Truss — Montagem'},
   {sid:'oneway',s:[2026,6,8],e:[2026,6,9],act:'Montagem Iluminação — Montagem'},
   {sid:'oneway',s:[2026,6,8],e:[2026,6,9],act:'Montagem Som — Montagem'},
   {sid:'7cores',s:[2026,6,9],e:[2026,6,10],act:'COLOCAÇÃO DE ALCATIFA — Bancadas'},
   {sid:'niu',s:[2026,6,9],e:[2026,6,17],act:'Montagem stand Porsche — Smash Area'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'LIMPEZA Perimetro Final — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'ENERGIA — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'MANUTENÇÃO DE CAMPO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'Canalização — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'Limpeza CMC — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'Copa Segurança — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'BILHETEIRA/ACREDITAÇÃO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'BENGALEIRO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'VESTIÁRIOS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,9],e:[2026,6,9],act:'COPA — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'LIMPEZA Perimetro Final — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'ENERGIA — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'MANUTENÇÃO DE CAMPO — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'Canalização — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'Limpeza CMC — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'Copa Segurança — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'BILHETEIRA/ACREDITAÇÃO — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'BENGALEIRO — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'VESTIÁRIOS — Módulos'},
+  {sid:'mbw',s:[2026,6,9],e:[2026,6,9],act:'COPA — Módulos'},
   {sid:'irmarfer',s:[2026,6,9],e:[2026,6,10],act:'ESTRADO 10X5'},
   {sid:'mbw',s:[2026,6,9],e:[2026,6,14],act:'Court CTE — Bancadas'},
   {sid:'7cores',s:[2026,6,10],e:[2026,6,10],act:'Colocação de Relva — Estrado bilheteira'},
   {sid:'7cores',s:[2026,6,10],e:[2026,6,10],act:'Colocação de Relva'},
   {sid:'tlove',s:[2026,6,10],e:[2026,6,31],act:'Condicionamento piso -2 — Pilates'},
-  {sid:'mbw_m',s:[2026,6,10],e:[2026,6,10],act:'FOOD CONTAINER — Módulos'},
+  {sid:'mbw',s:[2026,6,10],e:[2026,6,10],act:'FOOD CONTAINER — Módulos'},
   {sid:'irmarfer',s:[2026,6,10],e:[2026,6,10],act:'TENDA MS 10X5'},
   {sid:'irmarfer',s:[2026,6,10],e:[2026,6,10],act:'ALCATIFA 10X5'},
   {sid:'tlove',s:[2026,6,11],e:[2026,6,17],act:'High Pré-evento'},
   {sid:'tlove',s:[2026,6,11],e:[2026,6,31],act:'Condicionamento piso -2 — Balneários'},
   {sid:'tlove',s:[2026,6,11],e:[2026,6,31],act:'Condicionamento piso 0 — Recepção'},
   {sid:'festaaluga',s:[2026,6,13],e:[2026,6,29],act:'Condicionamento piso -2 — Ginásio'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'SEGURANÇA — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'VALET — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'BOLT 6 — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'ATP — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'MEO — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'UCOM — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'UCOM  CZ — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'REGIE — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'WC MOBILIDADE REDUZIDA — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'WC EMERGENCIA — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'WC MASCULINOS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'WC FEMININOS — Módulos'},
-  {sid:'mbw_m',s:[2026,6,13],e:[2026,6,13],act:'IMG ARENA — Módulos'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,13],act:'P7 — Armazem Geral'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,13],act:'P8 — Entrada Cargas e Descargas'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,13],act:'P11 — Entrada Portão Area Tecnica'},
-  {sid:'powershield',s:[2026,6,13],e:[2026,6,13],act:'P34 — Entrada Portico'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'SEGURANÇA — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'VALET — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'BOLT 6 — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'ATP — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'MEO — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'UCOM — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'UCOM  CZ — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'REGIE — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC MOBILIDADE REDUZIDA — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC EMERGENCIA — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC MASCULINOS — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'WC FEMININOS — Módulos'},
+  {sid:'mbw',s:[2026,6,13],e:[2026,6,13],act:'IMG ARENA — Módulos'},
+  {sid:'powershield',s:[2026,6,13],e:[2026,6,28],act:'P7 — Armazem Geral'},
+  {sid:'powershield',s:[2026,6,13],e:[2026,6,26],act:'P8 — Entrada Cargas e Descargas'},
+  {sid:'powershield',s:[2026,6,13],e:[2026,6,28],act:'P11 — Entrada Portão Area Tecnica'},
+  {sid:'powershield',s:[2026,6,13],e:[2026,6,27],act:'P34 — Entrada Portico'},
   {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagens Som — Montagem'},
   {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Regie e Testes — Montagem'},
   {sid:'oneway',s:[2026,6,13],e:[2026,6,17],act:'Montagem Som Jogadores e Árbitros — Montagem'},
@@ -1050,36 +1039,35 @@ SCHED_ENTRIES = [
   {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 6'},
   {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 1'},
   {sid:'tlove',s:[2026,6,14],e:[2026,6,29],act:'Utilização de court para treinos players — Court 2'},
-  {sid:'mactecnica',s:[2026,6,14],e:[2026,6,14],act:'Mactecnica'},
   {sid:'oneway',s:[2026,6,15],e:[2026,6,16],act:'Montagem Estrutas Luz Cénica — Montagem'},
-  {sid:'powershield',s:[2026,6,16],e:[2026,6,16],act:'P13 — Entrada Principal Players'},
-  {sid:'powershield',s:[2026,6,16],e:[2026,6,16],act:'P16 — Entrada Wine Bar/Players Lounge'},
-  {sid:'powershield',s:[2026,6,16],e:[2026,6,16],act:'P18 — Entrada Estadio Corredor Players'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P9 — Parque Staff 1'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P12 — Corredor Fun Center'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P14 — Players Lounge'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P15 — Entrada secundária Players Lounge'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P17 — Entrada Estadio Publico Norte'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P19 — Estadio Millennium'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P20 — Entrada Estadio Players'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P21 — Entrada Estadio Publico Sul'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P22 — Corredor Court Cascais'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P23 — Acesso TV Compound'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P24 — Entrada Lateral Camarotes'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P25 — Entrada Topo Oeste Camarotes'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P26 — Entrada Topo Este Camarotes'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P27 — Entrada Secundária Slice Lounge'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P28 — Entrada Cascais Terrace'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P29 — Movel Slice'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P30 — Entrada Principal Slice'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P31 — Entrada Press'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P32 — Estacionamento  Valet 1'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P33 — Estacionamento Valet 2'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P35 — Movel Recinto'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P36 — Acompanhamento de Jogadores'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P37 — Corredor Padel/Area Tecnica'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P39 — Estacionamento Parque 1'},
-  {sid:'powershield',s:[2026,6,17],e:[2026,6,17],act:'P40 — Autodromo'},
+  {sid:'powershield',s:[2026,6,16],e:[2026,6,26],act:'P13 — Entrada Principal Players'},
+  {sid:'powershield',s:[2026,6,16],e:[2026,6,27],act:'P16 — Entrada Wine Bar/Players Lounge'},
+  {sid:'powershield',s:[2026,6,16],e:[2026,6,26],act:'P18 — Entrada Estadio Corredor Players'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P9 — Parque Staff 1'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,27],act:'P12 — Corredor Fun Center'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P14 — Players Lounge'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P15 — Entrada secundária Players Lounge'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P17 — Entrada Estadio Publico Norte'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P19 — Estadio Millennium'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P20 — Entrada Estadio Players'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P21 — Entrada Estadio Publico Sul'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P22 — Corredor Court Cascais'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P23 — Acesso TV Compound'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P24 — Entrada Lateral Camarotes'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P25 — Entrada Topo Oeste Camarotes'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P26 — Entrada Topo Este Camarotes'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P27 — Entrada Secundária Slice Lounge'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P28 — Entrada Cascais Terrace'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P29 — Movel Slice'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P30 — Entrada Principal Slice'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P31 — Entrada Press'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P32 — Estacionamento  Valet 1'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P33 — Estacionamento Valet 2'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P35 — Movel Recinto'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P36 — Acompanhamento de Jogadores'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P37 — Corredor Padel/Area Tecnica'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P39 — Estacionamento Parque 1'},
+  {sid:'powershield',s:[2026,6,17],e:[2026,6,26],act:'P40 — Autodromo'},
   {sid:'oneway',s:[2026,6,18],e:[2026,6,18],act:'Montagem Sorteio — Montagem'},
   {sid:'oneway',s:[2026,6,21],e:[2026,6,25],act:'Montagem Luz Festas — Montagem'},
   {sid:'oneway',s:[2026,6,21],e:[2026,6,25],act:'Montagem Som Festas — Montagem'},
@@ -1095,7 +1083,6 @@ SCHED_ENTRIES = [
 
 const SUPS = [
   {id:'mbw',           name:'MBW',              area:'Estruturas',    color:'#3b82f6', active:true},
-  {id:'mbw_m',         name:'MBW — Módulos',   area:'Estruturas',    color:'#0ea5e9', active:true},
   {id:'powershield',   name:'PowerShield',      area:'Segurança',     color:'#f59e0b', active:true},
   {id:'irmarfer',      name:'Irmarfer',         area:'Estruturas',    color:'#8b5cf6', active:true},
   {id:'7cores',        name:'7Cores',           area:'Manutenção',    color:'#ef4444', active:true},
@@ -1516,7 +1503,6 @@ function loadContacts(){
 }
 function saveContacts(){
   try{localStorage.setItem('meo_contacts',JSON.stringify(CONTACTS));}catch(e){}
-  saveContactsToFirebase();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -1550,10 +1536,6 @@ function showToast(msg,isErr){
   document.body.appendChild(t);setTimeout(()=>t.remove(),2500);
 }
 
-
-// ── LIMPAR act ANTIGOS DO FIREBASE QUE CONFLITUAM COM SCHED_ENTRIES ──────
-// cleanStaleActs removida - era perigosa para fotos
-
 function seedSchedule(){
   SCHED_ENTRIES.forEach(e=>{
     const s=new Date(e.s[0],e.s[1],e.s[2]);
@@ -1562,7 +1544,7 @@ function seedSchedule(){
     while(cur<=en){
       const dow=cur.getDay();
       const ok=e.wd?e.wd.includes(dow):!isWknd(cur);
-      if(ok){setRec(e.sid,cur,{act:e.act});}
+      if(ok){const ex=getRec(e.sid,cur);if(!ex.act)setRec(e.sid,cur,{act:e.act});}
       cur.setDate(cur.getDate()+1);
     }
   });
@@ -1793,26 +1775,12 @@ function centerOnToday(){
 }
 function getSchedAct(sid,d){
   const ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
-  const today=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()).getTime();
   const acts=[];
   for(const e of SCHED_ENTRIES){
     if(e.sid!==sid)continue;
-    if(!e.act)continue;
     const s=new Date(e.s[0],e.s[1],e.s[2]).getTime();
     const en=new Date(e.e[0],e.e[1],e.e[2]).getTime();
-    // Dentro do período normal
-    if(ds>=s&&ds<=en){acts.push(e.act);continue;}
-    // Em atraso: passou a data de fim mas ainda não foi concluída (prog<100)
-    // Só aparece até hoje (não em datas futuras nem passadas antes do início)
-    if(ds>en&&ds<=today){
-      // Verificar se a tarefa foi concluída na data de fim ou antes
-      // Usar o registo do dia de fim para verificar progresso
-      const endDate=new Date(en);
-      const rec=getRec(sid,endDate);
-      if(rec.prog<100){
-        acts.push('⚠️ EM ATRASO — '+e.act);
-      }
-    }
+    if(ds>=s&&ds<=en&&e.act)acts.push(e.act);
   }
   return acts.join('\n');
 }
@@ -1835,7 +1803,7 @@ function renderGantt(skipCenter){
     }).join('')+'</tr>';
     // Activity row - inline editable for admins
     html+='<tr class="g-data"><td class="g-sup-td" style="font-size:10px;color:var(--text3);padding:2px 11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px">Operação</td>'+days.map(d=>{
-      const r=getRec(sup.id,d);const schedActs=getSchedAct(sup.id,d);const act=schedActs||r.act||'';
+      const r=getRec(sup.id,d);const schedActs=getSchedAct(sup.id,d);const act=r.act||schedActs||'';
       if(isAdmin()){
         return'<td class="g-day-td'+(isToday(d)?' tday':isWknd(d)?' wknd':'')+'" style="padding:2px;vertical-align:top">'+
           '<textarea class="g-act-inp" data-sid="'+sup.id+'" data-date="'+d.toISOString()+'" placeholder="—" '+
@@ -1993,7 +1961,7 @@ function renderRegPhotosOnly(sid, d){
   const photos = r.photos || [];
   const el = document.getElementById('photos-'+sid);
   if(!el) return;
-  el.innerHTML = photos.filter(p=>p&&p.dataUrl).map((p,i)=>
+  el.innerHTML = photos.filter(p=>p.dataUrl).map((p,i)=>
     '<div style="position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer" class="ph-thumb" data-sid="'+sid+'" data-pi="'+i+'">'+
     '<img src="'+p.dataUrl+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
     '<button class="ph-del" data-sid="'+sid+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer">✕</button></div>'
@@ -2093,15 +2061,16 @@ function renderReg(){
     Array.from(e.target.files||[]).forEach(file=>{
       if(!file.type.startsWith('image/'))return;
       const reader=new FileReader();
-      reader.onload=async ev=>{
+      reader.onload=ev=>{
         const now=new Date();
-        const photo={type:'Foto',desc:file.name||'Foto',
+        const r=getRec(sid,TODAY);
+        const newPhoto={type:'Foto',desc:file.name||'Foto',
           ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
           dataUrl:ev.target.result};
-        await addPhoto(sid,TODAY,photo);
+        const photos=[...(r.photos||[]), newPhoto];
+        setRec(sid,TODAY,{photos});
         renderRegPhotosOnly(sid,TODAY);
-      };
-      reader.readAsDataURL(file);
+      };reader.readAsDataURL(file);
     });
     e.target.value='';
   }));
@@ -2721,16 +2690,9 @@ function openPhotoModal(sid,dateStr){
         Array.from(e.target.files||[]).forEach(file=>{
           if(!file.type.startsWith('image/'))return;
           const reader=new FileReader();
-          reader.onload=async ev=>{
+          reader.onload=ev=>{
             const now=new Date();
-            const photo={type:'Foto',desc:file.name||'Foto',
-              ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
-              dataUrl:ev.target.result};
-            await addPhoto(modalSid,TODAY,photo);
-            // Sincronizar array local do modal com cache
-            const updatedPhotos=getRec(modalSid,TODAY).photos||[];
-            photos.length=0; updatedPhotos.forEach(p=>photos.push(p));
-            {
+            photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
             setRec(sid,d,{photos:[...photos]});
             showToast('📸 Foto guardada!');
             // Auto-save and return to map
@@ -2798,16 +2760,9 @@ function openDayModal(sid,d){
         Array.from(e.target.files||[]).forEach(file=>{
           if(!file.type.startsWith('image/'))return;
           const reader=new FileReader();
-          reader.onload=async ev=>{
+          reader.onload=ev=>{
             const now=new Date();
-            const photo={type:'Foto',desc:file.name||'Foto',
-              ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
-              dataUrl:ev.target.result};
-            await addPhoto(modalSid,TODAY,photo);
-            // Sincronizar array local do modal com cache
-            const updatedPhotos=getRec(modalSid,TODAY).photos||[];
-            photos.length=0; updatedPhotos.forEach(p=>photos.push(p));
-            {
+            photos.push({type:'Foto',desc:file.name||'Foto',ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),dataUrl:ev.target.result});
             setRec(sid,d,{photos:[...photos]});
             showToast('📸 Foto adicionada! A guardar...');
             draw();
