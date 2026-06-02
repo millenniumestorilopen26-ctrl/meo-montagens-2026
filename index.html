@@ -634,7 +634,14 @@ function setRec(sid, d, data){
   const toSave = {att:r.att||'',prog:r.prog||0,act:r.act||'',obs:r.obs||'',taskProgs:r.taskProgs||{},
     photos:(r.photos||[]).map(p=>({type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',dataUrl:p.dataUrl||''}))};
   console.log('[setRec]',k,'fotos:',(r.photos||[]).length);
-  fbUpdate('records/'+k.replace('__','_'), toSave).catch(e=>console.warn('Firebase:', e));
+  const _fbSize = JSON.stringify(toSave).length;
+  console.log('[Firebase] A guardar',k,'tamanho:',Math.round(_fbSize/1024)+'KB');
+  fbUpdate('records/'+k.replace('__','_'), toSave).then(()=>{
+    console.log('[Firebase] ✅ Guardado com sucesso');
+  }).catch(e=>{
+    console.error('[Firebase] ❌ ERRO ao guardar:',e);
+    showToast('❌ Erro Firebase: '+e.message);
+  });
 
   // Cloudinary em background para fotos base64 (não bloqueia)
   const newBase64 = (r.photos||[]).filter(p=>p.dataUrl&&p.dataUrl.startsWith('data:'));
@@ -2065,17 +2072,29 @@ function renderReg(){
       const reader=new FileReader();
       reader.onload=ev=>{
         const now=new Date();
-        const r=getRec(sid,TODAY);
-        const before=(r.photos||[]).length;
-        const newPhoto={type:'Foto',desc:file.name||'Foto',
-          ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
-          dataUrl:ev.target.result};
-        const photos=[...(r.photos||[]), newPhoto];
-        showToast('📸 A guardar foto '+(before+1)+'...');
-        setRec(sid,TODAY,{photos});
-        renderRegPhotosOnly(sid,TODAY);
-        const after=getRec(sid,TODAY).photos.length;
-        showToast('✅ Cache: '+after+' fotos (era '+before+')');
+        // Comprimir imagem para max 800px e qualidade 70% antes de guardar
+        const img=new Image();
+        img.onload=()=>{
+          const MAX=800;
+          let w=img.width,h=img.height;
+          if(w>MAX||h>MAX){ if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
+          const canvas=document.createElement('canvas');
+          canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          const compressed=canvas.toDataURL('image/jpeg',0.7);
+          const origKB=Math.round(ev.target.result.length/1024);
+          const compKB=Math.round(compressed.length/1024);
+          console.log('[FOTO] Original:'+origKB+'KB → Comprimida:'+compKB+'KB');
+          const r=getRec(sid,TODAY);
+          const newPhoto={type:'Foto',desc:file.name||'Foto',
+            ts:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+            dataUrl:compressed};
+          const photos=[...(r.photos||[]), newPhoto];
+          showToast('📸 Foto '+(photos.length)+' guardada ('+compKB+'KB)');
+          setRec(sid,TODAY,{photos});
+          renderRegPhotosOnly(sid,TODAY);
+        };
+        img.src=ev.target.result;
       };reader.readAsDataURL(file);
     });
     e.target.value='';
