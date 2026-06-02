@@ -622,6 +622,9 @@ function getRec(sid, d){
   return rec;
 }
 
+// Tracking de escritas locais para evitar overwrite pelo realtimeSync
+const _lastLocalWrite = {};
+
 function setRec(sid, d, data){
   const k = dkey(sid, d);
   const prev = _recCache[k] || {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
@@ -630,6 +633,9 @@ function setRec(sid, d, data){
   // Não fazer merge aqui — evita duplicações e race conditions
   _recCache[k] = {...prev, ...data};
   const photos = _recCache[k].photos || [];
+
+  // Marcar escrita local (bloqueia realtimeSync por 10s)
+  _lastLocalWrite[k] = Date.now();
 
   // Guardar no localStorage imediatamente
   try{localStorage.setItem('meo_photos_'+k, JSON.stringify(photos));}catch(e){}
@@ -773,22 +779,25 @@ function startRealtimeSync(){
     const data = snap.val();
     if(!data) return;
     let updated = false;
+    const now = Date.now();
     Object.entries(data).forEach(([k, v])=>{
       const key = k.replace('_','__');
-      if(JSON.stringify(_recCache[key]) !== JSON.stringify(v)){
-        // Use Firebase data (includes Cloudinary photo URLs shared across devices)
-        _recCache[key] = {...v};
-        if(!_recCache[key].photos) _recCache[key].photos = [];
-        // Check if local has newer photos
-        try{
-          const lp = localStorage.getItem('meo_photos_'+key);
-          if(lp){
-            const localPhotos = JSON.parse(lp);
-            if(localPhotos.length > _recCache[key].photos.length){
-              _recCache[key].photos = localPhotos;
-            }
-          }
-        }catch(e){}
+      // Ignorar updates do Firebase nos primeiros 10s após uma escrita local
+      // (evita sobrescrever fotos recém-adicionadas com echo do Firebase)
+      if(_lastLocalWrite && _lastLocalWrite[key] && (now - _lastLocalWrite[key]) < 10000) return;
+      const fbPhotos = (v.photos||[]);
+      const localPhotos = _recCache[key] ? (_recCache[key].photos||[]) : [];
+      // Merge aditivo: combinar fotos do Firebase com locais
+      const seen = new Set();
+      const mergedPhotos = [...localPhotos, ...fbPhotos].filter(p=>{
+        const dk = (p.ts||'')+'|'+(p.desc||'');
+        if(seen.has(dk)) return false;
+        seen.add(dk); return true;
+      });
+      const newRec = {...v, photos: mergedPhotos};
+      if(JSON.stringify(_recCache[key]) !== JSON.stringify(newRec)){
+        _recCache[key] = newRec;
+        try{localStorage.setItem('meo_photos_'+key, JSON.stringify(mergedPhotos));}catch(e){}
         updated = true;
       }
     });
