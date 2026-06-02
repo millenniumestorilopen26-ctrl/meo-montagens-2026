@@ -3654,6 +3654,12 @@ function launchApp(){
     loadUsersFromFirebase().then(u=>{if(u){}}),
     loadSupsFromFirebase()
   ]).then(()=>{
+    // Garantir que mbw_m existe no SUPS (pode ter sido perdido no Firebase)
+    if(!SUPS.find(s=>s.id==='mbw_m')){
+      const mbwIdx = SUPS.findIndex(s=>s.id==='mbw');
+      SUPS.splice(mbwIdx+1, 0, {id:'mbw_m', name:'MBW — Módulos', area:'Módulos', color:'#0ea5e9', active:true});
+      saveSupsToFirebase();
+    }
     initUsers();
     loadContacts();
     seedSchedule();
