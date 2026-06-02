@@ -2077,8 +2077,19 @@ function renderReg(){
         if(tasks.length>0){
           taskHtml='<div style="margin-bottom:10px"><label class="flbl">Tarefas e Progresso</label>'+
           tasks.map(function(t,i){var p=progs[i]||0;
+            // Datas da tarefa
+            const sidE3=SCHED_ENTRIES.filter(x=>x.sid===sup.id);
+            const tE=sidE3.find(x=>x.act===t||t.includes(x.act));
+            let tDateStr='';
+            if(tE){
+              const ts2=new Date(tE.s[0],tE.s[1],tE.s[2]);
+              const te2=new Date(tE.e[0],tE.e[1],tE.e[2]);
+              const fd=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+              const isLate=te2<(state.regDate||TODAY)&&p<100;
+              tDateStr='<span style="font-size:9px;font-weight:600;color:'+(isLate?'#e02020':'var(--text3)')+';float:right">'+fd(ts2)+' → '+fd(te2)+(isLate?' ⚠️':'')+'</span>';
+            }
             return '<div style="padding:7px 10px;margin-bottom:5px;background:#fffbea;border-left:3px solid '+sup.color+';border-radius:6px">'+
-            '<div style="font-size:11px;font-weight:700;color:#333;margin-bottom:5px">'+(tasks.length>1?'<span style="color:'+sup.color+'">'+(i+1)+'. </span>':'')+t+'</div>'+
+            '<div style="font-size:11px;font-weight:700;color:#333;margin-bottom:5px">'+(tasks.length>1?'<span style="color:'+sup.color+'">'+(i+1)+'. </span>':'')+t+tDateStr+'</div>'+
             '<div style="display:flex;align-items:center;gap:8px">'+
             '<span style="font-size:10px;font-weight:700;min-width:28px">'+p+'%</span>'+
             '<input type="range" class="task-prng" min="0" max="100" step="5" value="'+p+'" data-sid="'+sup.id+'" data-ti="'+i+'" style="flex:1">'+
@@ -2378,8 +2389,15 @@ function renderRel(){
       // Tarefas concluídas para este fornecedor
       const sidEntriesRel = SCHED_ENTRIES.filter(e=>e.sid===r.s.id);
       const doneTasksRel = _doneTasks[r.s.id]||[];
+      const rdTs = new Date(RD.getFullYear(),RD.getMonth(),RD.getDate()).getTime();
       const schedTasksConcluidas = sidEntriesRel
-        .filter((e,i)=>doneTasksRel[i] && e.act)
+        .filter((e,i)=>{
+          if(!doneTasksRel[i] || !e.act) return false;
+          // Só mostrar se a tarefa estava activa nesse dia (dentro do período)
+          const s=new Date(e.s[0],e.s[1],e.s[2]).getTime();
+          const en=new Date(e.e[0],e.e[1],e.e[2]).getTime();
+          return rdTs>=s && rdTs<=en;
+        })
         .map(e=>'✅ '+e.act);
       const schedTasks = [...schedTasksActive, ...schedTasksConcluidas];
       const taskProgs = r.taskProgs || {};
@@ -2388,8 +2406,19 @@ function renderRel(){
         schedTasks.map((t,i)=>{
           const p = taskProgs[i] || 0;
           const pc = pColor(p);
+          // Encontrar datas da tarefa
+          const sidE2=SCHED_ENTRIES.filter(x=>x.sid===r.s.id);
+          const tEntry=sidE2.find(x=>x.act===t||t.includes(x.act));
+          let dateRange='';
+          if(tEntry){
+            const ts=new Date(tEntry.s[0],tEntry.s[1],tEntry.s[2]);
+            const te=new Date(tEntry.e[0],tEntry.e[1],tEntry.e[2]);
+            const fmtD2=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+            dateRange='<span style="font-size:9px;color:var(--text3);flex-shrink:0;white-space:nowrap">'+fmtD2(ts)+' → '+fmtD2(te)+'</span>';
+          }
           return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0ece0">'+
             '<span style="font-size:11px;color:var(--text2);flex:1;line-height:1.3">'+t+'</span>'+
+            dateRange+
             '<div style="width:80px;height:4px;background:#e5e7eb;border-radius:2px;flex-shrink:0"><div style="width:'+p+'%;height:100%;background:'+pc+';border-radius:2px"></div></div>'+
             '<span style="font-size:11px;font-weight:800;color:'+pc+';min-width:30px;text-align:right">'+p+'%</span>'+
           '</div>';
