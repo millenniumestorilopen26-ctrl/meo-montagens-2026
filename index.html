@@ -624,25 +624,16 @@ function getRec(sid, d){
 
 function setRec(sid, d, data){
   const k = dkey(sid, d);
-  // Merge data no cache — fotos são sempre aditivas (nunca substituir pelo array de data directamente)
   const prev = _recCache[k] || {att:'',prog:0,act:'',obs:'',photos:[],taskProgs:{}};
-  if(data.photos !== undefined){
-    // Merge aditivo: combinar fotos existentes com as novas, dedup por ts+desc
-    const allPhotos = [...(prev.photos||[]), ...(data.photos||[])];
-    const seen = new Set();
-    data.photos = allPhotos.filter(p=>{
-      const key = (p.ts||'')+'|'+(p.desc||'');
-      if(seen.has(key))return false;
-      seen.add(key);return true;
-    });
-  }
+
+  // Para fotos: o array passado JÁ é o array completo (construído no handler)
+  // Não fazer merge aqui — evita duplicações e race conditions
   _recCache[k] = {...prev, ...data};
   const photos = _recCache[k].photos || [];
 
-  // Guardar no localStorage imediatamente (fonte de verdade local)
+  // Guardar no localStorage imediatamente
   try{localStorage.setItem('meo_photos_'+k, JSON.stringify(photos));}catch(e){}
 
-  // Sincronizar com Firebase — cache local é sempre a fonte de verdade
   function syncToFirebase(){
     const toSync = {
       att:_recCache[k].att||'',
@@ -651,34 +642,26 @@ function setRec(sid, d, data){
       obs:_recCache[k].obs||'',
       taskProgs:_recCache[k].taskProgs||{},
       photos:(_recCache[k].photos||[]).map(p=>({
-        type:p.type||'Foto',
-        desc:p.desc||'',
-        ts:p.ts||'',
-        dataUrl:p.dataUrl||'',
-        cloudinary:!!p.cloudinary
+        type:p.type||'Foto',desc:p.desc||'',ts:p.ts||'',
+        dataUrl:p.dataUrl||'',cloudinary:!!p.cloudinary
       }))
     };
-    fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase sync:', e));
+    fbUpdate('records/'+k.replace('__','_'), toSync).catch(e=>console.warn('Firebase:', e));
   }
 
-  // Upload Cloudinary para fotos base64 novas
+  // Upload Cloudinary para fotos base64 novas (não bloqueia o UI)
   const newBase64 = photos.filter(p => p.dataUrl && p.dataUrl.startsWith('data:'));
   if(newBase64.length > 0){
+    // Sync imediato com base64 (para não perder se sair da app)
+    syncToFirebase();
+    // Depois upload Cloudinary em background
     Promise.all(newBase64.map(async p => {
       try{
         const url = await uploadToCloudinary(p.dataUrl, p.desc||'foto.jpg');
-        p.dataUrl = url;
-        p.cloudinary = true;
-        // Actualizar localStorage após cada upload com sucesso
+        p.dataUrl = url; p.cloudinary = true;
         try{localStorage.setItem('meo_photos_'+k, JSON.stringify(_recCache[k].photos||[]));}catch(e){}
-      }catch(e){
-        console.warn('Cloudinary upload failed, keeping base64:', e);
-      }
-    })).then(()=>{
-      syncToFirebase();
-      if(state.page==='registo') renderRegPhotosOnly(sid,d);
-      if(state.page==='relatorio') renderRel();
-    });
+      }catch(e){ console.warn('Cloudinary falhou, base64 mantido:', e); }
+    })).then(()=>{ syncToFirebase(); });
   } else {
     syncToFirebase();
   }
@@ -2015,7 +1998,7 @@ function renderRegPhotosOnly(sid, d){
   const photos = r.photos || [];
   const el = document.getElementById('photos-'+sid);
   if(!el) return;
-  el.innerHTML = photos.filter(p=>p.dataUrl).map((p,i)=>
+  el.innerHTML = photos.filter(p=>p&&p.dataUrl).map((p,i)=>
     '<div style="position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer" class="ph-thumb" data-sid="'+sid+'" data-pi="'+i+'">'+
     '<img src="'+p.dataUrl+'" style="width:100%;height:62px;object-fit:cover;display:block">'+
     '<button class="ph-del" data-sid="'+sid+'" data-pi="'+i+'" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;font-size:10px;cursor:pointer">✕</button></div>'
