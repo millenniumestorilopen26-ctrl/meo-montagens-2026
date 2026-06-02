@@ -1837,12 +1837,26 @@ function centerOnToday(){
 }
 function getSchedAct(sid,d){
   const ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  const today=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()).getTime();
   const acts=[];
   for(const e of SCHED_ENTRIES){
     if(e.sid!==sid)continue;
+    if(!e.act)continue;
     const s=new Date(e.s[0],e.s[1],e.s[2]).getTime();
     const en=new Date(e.e[0],e.e[1],e.e[2]).getTime();
-    if(ds>=s&&ds<=en&&e.act)acts.push(e.act);
+    // Dentro do período normal
+    if(ds>=s&&ds<=en){acts.push(e.act);continue;}
+    // Em atraso: passou a data de fim mas ainda não foi concluída (prog<100)
+    // Só aparece até hoje (não em datas futuras nem passadas antes do início)
+    if(ds>en&&ds<=today){
+      // Verificar se a tarefa foi concluída na data de fim ou antes
+      // Usar o registo do dia de fim para verificar progresso
+      const endDate=new Date(en);
+      const rec=getRec(sid,endDate);
+      if(rec.prog<100){
+        acts.push('⚠️ EM ATRASO — '+e.act);
+      }
+    }
   }
   return acts.join('\n');
 }
